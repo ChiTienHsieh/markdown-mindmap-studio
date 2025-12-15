@@ -1,0 +1,37 @@
+{
+  "project": {
+    "name": "markdown-mindmap-studio",
+    "title": "Pokemon Pokedex",
+    "description": "Hierarchical documentation system using Markdown"
+  },
+  "modules": {
+    "01_pokemon_types": "Pokemon Types",
+    "02_battle_system": "Battle System",
+    "03_evolution": "Evolution"
+  },
+  "dimensions": {
+    "ui_ux": "UI/UX",
+    "frontend": "Frontend",
+    "backend": "Backend",
+    "ai_data": "AI & Data",
+    "specs": "SPEC Links"
+  },
+  "mindmap": {
+    "maxFrItems": 100,
+    "maxDimensionItems": 100,
+    "maxDescriptionLength": 200
+  },
+  "theme": {
+    "default": "dark"
+  },
+  "ui": {
+    "defaultLocale": "en",
+    "supportedLocales": ["en", "zh-TW"]
+  },
+  "agent": {
+    "model": "claude-haiku-4-5-20251201",
+    "maxTokens": 4096,
+    "allowedTools": ["Read", "Edit", "Write", "Glob", "Grep"],
+    "systemPromptFile": "editor/config/agent_prompt.md"
+  }
+}

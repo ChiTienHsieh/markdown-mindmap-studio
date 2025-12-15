@@ -1,0 +1,60 @@
+{
+  "app": {
+    "title": "{projectTitle} - Mindmap Editor"
+  },
+  "header": {
+    "title": "{projectTitle} - Mindmap Editor"
+  },
+  "sidebar": {
+    "filesTitle": "Files"
+  },
+  "editor": {
+    "placeholder": "Select a file from the sidebar to edit...",
+    "noFileSelected": "No file selected"
+  },
+  "buttons": {
+    "save": "Save (Ctrl+S)",
+    "refresh": "Reload files",
+    "fit": "Fit to view",
+    "fullscreen": "Fullscreen",
+    "themeToggle": "Toggle dark/light theme",
+    "edit": "Edit"
+  },
+  "status": {
+    "connected": "Connected",
+    "disconnected": "Disconnected"
+  },
+  "modal": {
+    "editTitle": "Edit Node",
+    "cancel": "Cancel",
+    "save": "Save"
+  },
+  "agent": {
+    "panelTitle": "Agent Chat",
+    "statusChecking": "Checking...",
+    "statusReady": "Ready",
+    "statusUnavailable": "Unavailable",
+    "inputPlaceholder": "Type a message...",
+    "sendButton": "Send",
+    "welcome": {
+      "intro": "I can help you with:",
+      "capabilities": [
+        "Browse and understand the mindmap structure",
+        "Search for specific requirements or keywords",
+        "Edit content.md files",
+        "Answer questions about system architecture"
+      ],
+      "example": "Try: \"List all FR items in the pokemon_types module\""
+    }
+  },
+  "ai": {
+    "suggestionSection": "AI Suggestion",
+    "selectTextFirst": "Please select text to analyze, or open a file first",
+    "copyButton": "Copy",
+    "copySuccess": "Copied",
+    "copyFailed": "Copy failed"
+  },
+  "mindmap": {
+    "requirementsTitle": "Requirements"
+  }
+}

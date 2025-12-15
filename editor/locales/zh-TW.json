@@ -1,0 +1,60 @@
+{
+  "app": {
+    "title": "{projectTitle} - Mindmap Editor"
+  },
+  "header": {
+    "title": "{projectTitle} - Mindmap Editor"
+  },
+  "sidebar": {
+    "filesTitle": "Files"
+  },
+  "editor": {
+    "placeholder": "從側邊欄選擇檔案進行編輯...",
+    "noFileSelected": "未選擇檔案"
+  },
+  "buttons": {
+    "save": "儲存 (Ctrl+S)",
+    "refresh": "重新載入檔案",
+    "fit": "適合視窗大小",
+    "fullscreen": "全螢幕",
+    "themeToggle": "切換深色/淺色主題",
+    "edit": "Edit"
+  },
+  "status": {
+    "connected": "Connected",
+    "disconnected": "Disconnected"
+  },
+  "modal": {
+    "editTitle": "Edit Node",
+    "cancel": "Cancel",
+    "save": "Save"
+  },
+  "agent": {
+    "panelTitle": "Agent Chat",
+    "statusChecking": "Checking...",
+    "statusReady": "Ready",
+    "statusUnavailable": "Unavailable",
+    "inputPlaceholder": "輸入訊息...",
+    "sendButton": "送出",
+    "welcome": {
+      "intro": "我可以幫你：",
+      "capabilities": [
+        "瀏覽和理解 mindmap 結構",
+        "搜尋特定的 FR 或關鍵字",
+        "編輯 content.md 檔案",
+        "回答系統架構相關問題"
+      ],
+      "example": "試試看：「列出所有 pokemon_types 模組的 FR」"
+    }
+  },
+  "ai": {
+    "suggestionSection": "AI 建議",
+    "selectTextFirst": "請先選取要分析的文字，或開啟一個檔案",
+    "copyButton": "複製",
+    "copySuccess": "已複製",
+    "copyFailed": "複製失敗"
+  },
+  "mindmap": {
+    "requirementsTitle": "功能需求"
+  }
+}
