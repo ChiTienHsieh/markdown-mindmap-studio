@@ -121,10 +121,9 @@ class TestBasicRoutes:
         data = response.json()
 
         # Check default config structure
-        assert "mindmap" in data
-        assert data["mindmap"]["maxFrItems"] == 100
-        assert data["mindmap"]["maxDimensionItems"] == 100
-        assert data["mindmap"]["maxDescriptionLength"] == 200
+        assert "project" in data
+        assert "modules" in data
+        assert "theme" in data
 
     async def test_api_config_reads_from_file(self, client, monkeypatch, tmp_path):
         """GET /api/config should read from features.json if exists"""

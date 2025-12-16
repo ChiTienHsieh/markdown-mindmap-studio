@@ -2,6 +2,8 @@
 
 > Interactive mindmap editor using Markdown files as single source of truth
 
+English | [繁體中文](README-zh.tw.md)
+
 ## Features
 
 - **Markdown-based**: All content stored as plain Markdown files
@@ -15,7 +17,7 @@
 
 ```bash
 # Clone the repo
-git clone https://github.com/YOUR_USERNAME/markdown-mindmap-studio.git
+git clone https://github.com/ChiTienHsieh/markdown-mindmap-studio.git
 cd markdown-mindmap-studio
 
 # Install dependencies
@@ -30,17 +32,21 @@ uv run python editor/server.py
 
 ```
 markdown-mindmap-studio/
-├── mindmap/           # Your content (Markdown files)
-│   ├── 01_module/
-│   │   ├── content.md
-│   │   └── requirements/
-│   └── ...
-├── editor/            # Web editor
+├── mindmap/                 # Your content (nested directories with content.md)
+│   ├── 01_topic/
+│   │   ├── content.md       # Topic content
+│   │   ├── subtopic_a/
+│   │   │   └── content.md
+│   │   └── subtopic_b/
+│   │       └── content.md
+│   └── 02_another_topic/
+│       └── ...
+├── editor/                  # Web editor (FastAPI + vanilla JS)
 │   ├── server.py
 │   └── static/
-├── scripts/           # Export tools
+├── scripts/                 # Export tools
 │   └── export_mindmap.py
-└── exports/           # Generated files
+└── exports/                 # Generated HTML/PDF files
 ```
 
 ## Customization
