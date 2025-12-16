@@ -4,6 +4,8 @@
 
 [English](README.md) | 繁體中文
 
+![Demo Screenshot](docs/images/demo.png)
+
 ## 特色功能
 
 - **Markdown 為本**: 所有內容以純文字 Markdown 檔案儲存

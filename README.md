@@ -4,6 +4,8 @@
 
 English | [繁體中文](README-zh.tw.md)
 
+![Demo Screenshot](docs/images/demo.png)
+
 ## Features
 
 - **Markdown-based**: All content stored as plain Markdown files
