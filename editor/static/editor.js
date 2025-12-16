@@ -551,13 +551,27 @@ async function loadAllMarkdown(shouldFitMindmap = false) {
         // Recursively build markdown from tree structure
         function buildMarkdown(node, level) {
             const headerPrefix = '#'.repeat(Math.min(level, 6));  // Max 6 levels for markdown
-            const nodeContent = node.content ?
-                node.content.trim().split('\n').filter(line => line.trim()).map(escapeHtml).join('<br>') : '';
 
-            // Get display name from config or use directory name
-            const displayName = appConfig.modules?.[node.id] || node.name || node.id;
+            // Parse content: first line is title, rest is description
+            let title = null;
+            let descriptionLines = [];
 
-            let md = `${headerPrefix} ${escapeHtml(displayName)}${nodeContent ? '<br>' + nodeContent : ''}\n\n`;
+            if (node.content) {
+                const lines = node.content.trim().split('\n').filter(line => line.trim());
+                if (lines.length > 0) {
+                    title = lines[0].trim();  // First line is title
+                    descriptionLines = lines.slice(1).map(line => line.trim());  // Rest is description
+                }
+            }
+
+            // Fallback to config or directory name if no title in content
+            if (!title) {
+                title = appConfig.modules?.[node.id] || node.name || node.id;
+            }
+
+            // Build heading with optional description
+            const description = descriptionLines.map(escapeHtml).join('<br>');
+            let md = `${headerPrefix} ${escapeHtml(title)}${description ? '<br>' + description : ''}\n\n`;
 
             // Recursively process children
             if (node.children && node.children.length > 0) {

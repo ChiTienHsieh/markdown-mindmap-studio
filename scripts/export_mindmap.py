@@ -97,32 +97,33 @@ def generate_markmap_md(modules) -> str:
         # Determine heading level (## for modules, ### for requirements, etc.)
         heading_prefix = "#" * level
 
-        # Get display name
-        if level == 2:  # Module level
-            display_name = module_names.get(dir_name, dir_name)
-        else:
-            display_name = dir_to_heading.get(dir_name, dir_name)
-
-        # Read content.md if exists
+        # Read content.md if exists - first line is title, rest is description
         content_file = path / "content.md"
-        content_lines = []
+        title = None
+        description_lines = []
+
         if content_file.exists():
             content = content_file.read_text().strip()
             if content:
-                for line in content.split('\n'):
-                    if line.strip():
-                        content_lines.append(line.strip())
+                all_lines = [line.strip() for line in content.split('\n') if line.strip()]
+                if all_lines:
+                    title = all_lines[0]  # First line is title
+                    description_lines = all_lines[1:]  # Rest is description
 
-        # Use <br> to merge content into heading for ALL levels
-        # This creates a multi-line text block like Whimsical
-        if content_lines:
-            # Heading with content as <br> separated text block
-            heading_with_content = display_name + "<br>" + "<br>".join(content_lines)
+        # Fallback to config or directory name if no title in content.md
+        if not title:
+            if level == 2:  # Module level
+                title = module_names.get(dir_name, dir_name)
+            else:
+                title = dir_to_heading.get(dir_name, dir_name)
+
+        # Build heading with optional description
+        if description_lines:
+            heading_with_content = title + "<br>" + "<br>".join(description_lines)
             lines.append(f"{heading_prefix} {heading_with_content}")
             lines.append("")
         else:
-            # Add heading without content
-            lines.append(f"{heading_prefix} {display_name}")
+            lines.append(f"{heading_prefix} {title}")
             lines.append("")
 
         # Process subdirectories (sorted by name)
