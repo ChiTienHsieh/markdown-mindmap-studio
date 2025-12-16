@@ -34,38 +34,31 @@ from server import app, MINDMAP_DIR, STATIC_DIR, PROJECT_ROOT
 
 @pytest.fixture
 def temp_docs_dir(tmp_path):
-    """Create a temporary mindmap directory for testing (matches new content.md structure)"""
+    """Create a temporary mindmap directory for testing (generic tree structure)"""
     mindmap = tmp_path / "mindmap"
     mindmap.mkdir()
 
-    # Create a sample module structure matching the new layout
-    module_01 = mindmap / "01_map"
+    # Create a sample module structure (generic tree)
+    module_01 = mindmap / "01_adventure"
     module_01.mkdir()
 
-    # Create module-level content.md (user stories)
+    # Create module-level content.md
     module_content = module_01 / "content.md"
-    module_content.write_text("✓ 一般民眾可以查看災區地圖\n✓ 志工可以看到任務地點")
+    module_content.write_text("Your Adventure Begins\nWelcome to the world!")
 
-    # Create requirements directory structure
-    requirements = module_01 / "requirements"
-    requirements.mkdir()
+    # Create child directories with content
+    child1 = module_01 / "first_quest"
+    child1.mkdir()
+    (child1 / "content.md").write_text("Find the ancient sword\nDefeat the dragon")
 
-    # Create requirements/content.md (FR list)
-    req_content = requirements / "content.md"
-    req_content.write_text("FR-MAP-01: 基本地圖顯示\nFR-MAP-02: 站點標記")
+    child2 = module_01 / "second_quest"
+    child2.mkdir()
+    (child2 / "content.md").write_text("Save the village\nBring peace to the land")
 
-    # Create dimension directories with content.md
-    for dim in ["ui_ux", "frontend", "backend", "ai_data"]:
-        dim_dir = requirements / dim
-        dim_dir.mkdir()
-        dim_content = dim_dir / "content.md"
-        dim_content.write_text(f"{dim} 相關需求說明")
-
-    # Create backend/specs
-    specs_dir = requirements / "backend" / "specs"
-    specs_dir.mkdir()
-    specs_content = specs_dir / "content.md"
-    specs_content.write_text("S01-map-api: 地圖 API 規格")
+    # Create nested child
+    nested = child1 / "dragon_lair"
+    nested.mkdir()
+    (nested / "content.md").write_text("The dragon sleeps here\nBe careful!")
 
     return mindmap
 
@@ -162,33 +155,32 @@ class TestFileAPI:
     """Test file listing and CRUD operations"""
 
     async def test_list_files_empty(self, client, temp_docs_dir, monkeypatch):
-        """GET /api/files should list content.md files in new structure"""
+        """GET /api/files should list content.md files"""
         response = await client.get("/api/files")
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
 
         assert "files" in data
         files = data["files"]
-        # New structure: 1 module + 1 requirements + 4 dimensions + 1 specs = 7 content.md files
-        assert len(files) == 7
+        # Generic structure: 1 module + 2 children + 1 nested = 4 content.md files
+        assert len(files) == 4
 
         # Check file structure - all files should be content.md
         assert all(f["name"] == "content.md" for f in files)
-        # All should be in 01_map module
-        assert all(f["module"] == "01_map" for f in files)
+        # All should be in 01_adventure module
+        assert all(f["module"] == "01_adventure" for f in files)
 
     async def test_read_file_success(self, client):
         """GET /api/files/{path} should return file content"""
-        # Read from new content.md structure
-        response = await client.get("/api/files/01_map/requirements/content.md")
+        # Read from content.md structure
+        response = await client.get("/api/files/01_adventure/first_quest/content.md")
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
 
-        assert data["path"] == "01_map/requirements/content.md"
-        # Check for FR pattern (FR-XXX-NN) - generic check
-        import re
-        assert re.search(r'FR-[A-Z]+-\d+', data["content"]), \
-            f"Expected FR pattern in content: {data['content']}"
+        assert data["path"] == "01_adventure/first_quest/content.md"
+        # Check content contains expected text
+        assert "dragon" in data["content"].lower(), \
+            f"Expected 'dragon' in content: {data['content']}"
 
     async def test_read_file_not_found(self, client):
         """GET /api/files/{path} should return 404 for missing file"""
@@ -237,7 +229,7 @@ class TestTreeAPI:
     """Test document tree API for mindmap"""
 
     async def test_get_tree_structure(self, client):
-        """GET /api/tree should return hierarchical tree (new format)"""
+        """GET /api/tree should return hierarchical tree (generic format)"""
         response = await client.get("/api/tree")
         assert response.status_code == status.HTTP_200_OK
         tree = response.json()
@@ -247,15 +239,16 @@ class TestTreeAPI:
         assert isinstance(tree["title"], str)
         assert "modules" in tree
 
-        # Check module nodes structure
+        # Check module nodes structure (generic tree format)
         assert len(tree["modules"]) >= 1
         module = tree["modules"][0]
         assert "id" in module
         assert "name" in module
-        assert "requirements" in module
-        # Check FR pattern in content (FR-XXX-NN format)
-        assert "FR-" in module["requirements"]["content"]
-        assert "dimensions" in module["requirements"]
+        assert "content" in module
+        assert "children" in module
+
+        # Module should have children (subdirectories)
+        assert len(module["children"]) >= 1
 
     async def test_get_tree_excludes_hidden_dirs(self, client, temp_docs_dir):
         """GET /api/tree should exclude hidden directories (starting with .)"""

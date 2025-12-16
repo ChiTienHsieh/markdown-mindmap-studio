@@ -199,13 +199,30 @@ async def get_locale(locale: str):
 
 @app.get("/api/tree")
 async def get_tree():
-    """Get the full document tree for mindmap rendering from new mindmap/ structure"""
+    """Get the full document tree for mindmap rendering - supports any directory structure"""
 
     def read_content_file(path: Path) -> str:
         """Helper to read content.md file, return empty string if not exists"""
         if path.exists():
             return path.read_text(encoding="utf-8")
         return ""
+
+    def build_tree_recursive(directory: Path) -> dict:
+        """Recursively build tree from directory structure"""
+        result = {
+            "id": directory.name,
+            "name": CONFIG.get("modules", {}).get(directory.name, directory.name),
+            "content": read_content_file(directory / "content.md"),
+            "children": []
+        }
+
+        # Get all subdirectories (sorted alphabetically)
+        for subdir in sorted(directory.iterdir()):
+            if subdir.is_dir() and not subdir.name.startswith("."):
+                child = build_tree_recursive(subdir)
+                result["children"].append(child)
+
+        return result
 
     modules = []
 
@@ -214,41 +231,8 @@ async def get_tree():
         if not module_dir.is_dir() or module_dir.name.startswith("."):
             continue
 
-        module_id = module_dir.name
-        module_name = CONFIG.get("modules", {}).get(module_id, module_id)
-
-        # Read module-level content.md (user stories)
-        module_content = read_content_file(module_dir / "content.md")
-
-        # Read requirements/content.md (FR list)
-        requirements_dir = module_dir / "requirements"
-        requirements_content = read_content_file(requirements_dir / "content.md")
-
-        # Read each dimension
-        dimensions = {}
-        for dimension_key in ["ui_ux", "frontend", "backend", "ai_data"]:
-            dimension_dir = requirements_dir / dimension_key
-            dimension_content = read_content_file(dimension_dir / "content.md")
-
-            dimension_data = {"content": dimension_content}
-
-            # Check for specs (only under backend)
-            if dimension_key == "backend":
-                specs_content = read_content_file(dimension_dir / "specs" / "content.md")
-                if specs_content:
-                    dimension_data["specs"] = {"content": specs_content}
-
-            dimensions[dimension_key] = dimension_data
-
-        modules.append({
-            "id": module_id,
-            "name": module_name,
-            "content": module_content,
-            "requirements": {
-                "content": requirements_content,
-                "dimensions": dimensions
-            }
-        })
+        module = build_tree_recursive(module_dir)
+        modules.append(module)
 
     return {
         "title": CONFIG.get("project", {}).get("title", "Mindmap"),

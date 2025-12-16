@@ -544,51 +544,35 @@ async function saveFile() {
 // shouldFitMindmap: true = fit mindmap to viewport after loading (for initial load)
 async function loadAllMarkdown(shouldFitMindmap = false) {
     try {
-        // Fetch tree data from new API
+        // Fetch tree data from API (supports any directory structure)
         const response = await fetch('/api/tree');
         const treeData = await response.json();
+
+        // Recursively build markdown from tree structure
+        function buildMarkdown(node, level) {
+            const headerPrefix = '#'.repeat(Math.min(level, 6));  // Max 6 levels for markdown
+            const nodeContent = node.content ?
+                node.content.trim().split('\n').filter(line => line.trim()).map(escapeHtml).join('<br>') : '';
+
+            // Get display name from config or use directory name
+            const displayName = appConfig.modules?.[node.id] || node.name || node.id;
+
+            let md = `${headerPrefix} ${escapeHtml(displayName)}${nodeContent ? '<br>' + nodeContent : ''}\n\n`;
+
+            // Recursively process children
+            if (node.children && node.children.length > 0) {
+                for (const child of node.children) {
+                    md += buildMarkdown(child, level + 1);
+                }
+            }
+
+            return md;
+        }
 
         let markdown = `# ${escapeHtml(treeData.title)}\n\n`;
 
         for (const module of treeData.modules) {
-            // Module heading with content as <br> separated text
-            // escapeHtml() prevents XSS from malicious content in markdown files
-            const moduleContent = module.content ?
-                module.content.trim().split('\n').filter(line => line.trim()).map(escapeHtml).join('<br>') : '';
-            markdown += `## ${escapeHtml(module.name)}${moduleContent ? '<br>' + moduleContent : ''}\n\n`;
-
-            // Requirements section
-            if (module.requirements) {
-                const reqContent = module.requirements.content ?
-                    module.requirements.content.trim().split('\n').filter(line => line.trim()).map(escapeHtml).join('<br>') : '';
-                const reqTitle = locale.mindmap?.requirementsTitle || 'Requirements';
-                markdown += `### ${reqTitle}${reqContent ? '<br>' + reqContent : ''}\n\n`;
-
-                // Dimensions in specific order
-                const dimensions = module.requirements.dimensions || {};
-                const dimOrder = ['ui_ux', 'frontend', 'backend', 'ai_data'];
-                const dimNames = appConfig.dimensions || {
-                    ui_ux: 'UI/UX',
-                    frontend: 'Frontend',
-                    backend: 'Backend',
-                    ai_data: 'AI & Data'
-                };
-
-                for (const dimKey of dimOrder) {
-                    const dim = dimensions[dimKey];
-                    if (dim && dim.content) {
-                        const dimContent = dim.content.trim().split('\n').filter(line => line.trim()).map(escapeHtml).join('<br>');
-                        markdown += `#### ${dimNames[dimKey]}<br>${dimContent}\n\n`;
-
-                        // SPEC links under backend
-                        if (dimKey === 'backend' && dim.specs && dim.specs.content) {
-                            const specContent = dim.specs.content.trim().split('\n').filter(line => line.trim()).map(escapeHtml).join('<br>');
-                            const specsTitle = appConfig.dimensions?.specs || 'SPEC Links';
-                            markdown += `##### ${specsTitle}<br>${specContent}\n\n`;
-                        }
-                    }
-                }
-            }
+            markdown += buildMarkdown(module, 2);  // Start at h2 for modules
         }
 
         state.allMarkdown = markdown;

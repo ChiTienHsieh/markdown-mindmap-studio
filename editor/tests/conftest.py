@@ -21,28 +21,26 @@ def mindmap_structure():
     Dynamically discover mindmap structure from file system.
 
     Returns a dict with:
-    - modules: list of module info (id, has_requirements, dimensions)
+    - modules: list of module info (id, subdirectories, has_content)
     - module_ids: set of module IDs for quick lookup
+    - module_count: total number of modules
     """
     modules = []
 
     if not MINDMAP_DIR.exists():
-        return {"modules": [], "module_ids": set()}
+        return {"modules": [], "module_ids": set(), "module_count": 0}
 
     for module_dir in sorted(MINDMAP_DIR.iterdir()):
         if not module_dir.is_dir() or module_dir.name.startswith("."):
             continue
 
-        req_dir = module_dir / "requirements"
-        dimensions = []
-        if req_dir.exists():
-            dimensions = [d.name for d in sorted(req_dir.iterdir()) if d.is_dir()]
+        # Find all subdirectories (any structure)
+        subdirs = [d.name for d in sorted(module_dir.iterdir()) if d.is_dir()]
 
         modules.append({
             "id": module_dir.name,
             "path": module_dir,
-            "has_requirements": req_dir.exists(),
-            "dimensions": dimensions,
+            "subdirectories": subdirs,
             "has_content": (module_dir / "content.md").exists(),
         })
 
@@ -65,12 +63,3 @@ def app_config():
     return {}
 
 
-@pytest.fixture(scope="session")
-def expected_dimensions():
-    """
-    Standard dimension directory names (structural constant).
-
-    These are the standard dimension folders that should exist
-    under each module's requirements/ directory.
-    """
-    return ["ui_ux", "frontend", "backend", "ai_data"]
