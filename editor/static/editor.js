@@ -772,6 +772,12 @@ function disableNodeEditing() {
 function handleNodeClick(e) {
     if (!state.editMode) return;
 
+    // Don't open modal if clicking on expand/collapse circle
+    // The circle is used by markmap for toggling node expansion
+    if (e.target.tagName?.toLowerCase() === 'circle') {
+        return;
+    }
+
     // Find the clicked node
     const node = e.target.closest('.markmap-node');
     if (!node) return;
