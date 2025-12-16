@@ -1,0 +1,2 @@
+Squirtle
+Water type - Balanced
