@@ -73,19 +73,8 @@ def generate_markmap_md(modules) -> str:
     lines.append(f"# {title}")
     lines.append("")
 
-    # Module display names mapping (NN_ prefix)
+    # Optional display name overrides (fallback when no content.md)
     module_names = CONFIG.get("modules", {})
-
-    # Directory name → Heading name mapping
-    dim_config = CONFIG.get("dimensions", {})
-    dir_to_heading = {
-        "requirements": "Requirements",
-        "ui_ux": dim_config.get("ui_ux", "UI/UX"),
-        "frontend": dim_config.get("frontend", "Frontend"),
-        "backend": dim_config.get("backend", "Backend"),
-        "ai_data": dim_config.get("ai_data", "AI & Data"),
-        "specs": dim_config.get("specs", "SPEC Links")
-    }
 
     def walk_directory(path: Path, level: int):
         """Recursively walk directory and generate markdown."""
@@ -110,12 +99,9 @@ def generate_markmap_md(modules) -> str:
                     title = all_lines[0]  # First line is title
                     description_lines = all_lines[1:]  # Rest is description
 
-        # Fallback to config or directory name if no title in content.md
+        # Fallback to config mapping or directory name if no title in content.md
         if not title:
-            if level == 2:  # Module level
-                title = module_names.get(dir_name, dir_name)
-            else:
-                title = dir_to_heading.get(dir_name, dir_name)
+            title = module_names.get(dir_name, dir_name)
 
         # Build heading with optional description
         if description_lines:

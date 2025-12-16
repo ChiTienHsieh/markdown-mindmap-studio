@@ -4,23 +4,7 @@
     "title": "Pokemon Pokedex",
     "description": "Hierarchical documentation system using Markdown"
   },
-  "modules": {
-    "01_your_journey_begins": "Your Journey Begins",
-    "02_first_gym_challenge": "First Gym Challenge",
-    "03_ss_anne_adventure": "SS Anne Adventure",
-    "professor_oak": "Professor Oak's Lab",
-    "rival_battle": "Rival Battle",
-    "route_1": "Route 1",
-    "bulbasaur": "Bulbasaur",
-    "charmander": "Charmander",
-    "squirtle": "Squirtle",
-    "preparation": "Prep Work",
-    "brock_fight": "VS Brock",
-    "boulder_badge": "Boulder Badge",
-    "the_captain": "The Captain",
-    "rival_rematch": "Rival Again",
-    "mew_rumors": "The Truck"
-  },
+  "modules": {},
   "theme": {
     "default": "dark"
   },
