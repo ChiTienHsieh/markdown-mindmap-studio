@@ -69,7 +69,7 @@ def load_config() -> dict:
         "project": {"title": "Mindmap Editor"},
         "modules": {},
         "dimensions": {"ui_ux": "UI/UX", "frontend": "Frontend", "backend": "Backend", "ai_data": "AI & Data", "specs": "SPEC Links"},
-        "agent": {"model": "claude-haiku-4-5-20251201", "maxTokens": 4096, "allowedTools": ["Read", "Edit", "Write", "Glob", "Grep"]}
+        "agent": {"maxTokens": 4096, "allowedTools": ["Read", "Edit", "Write", "Glob", "Grep"]}
     }
 
 CONFIG = load_config()
@@ -380,7 +380,7 @@ async def agent_chat(request: Request, chat_request: AgentChatRequest):
                 allowed_tools=agent_config.get("allowedTools", ["Read", "Edit", "Write", "Glob", "Grep"]),
                 permission_mode="acceptEdits",
                 cwd=str(PROJECT_ROOT),
-                model=agent_config.get("model", "claude-haiku-4-5-20251201"),
+                model=os.environ.get("ANTHROPIC_MODEL") or agent_config.get("model"),
             )
 
             async with ClaudeSDKClient(options=options) as client:

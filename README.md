@@ -89,12 +89,36 @@ See [docs/CUSTOMIZATION.md](docs/CUSTOMIZATION.md) for:
 
 ## AI Assistant (Optional)
 
-To enable the AI assistant, set your Anthropic API key:
+### Option 1: Anthropic API (Paid)
 
 ```bash
 export ANTHROPIC_API_KEY=your-key-here
 uv run python editor/server.py
 ```
+
+### Option 2: OpenRouter Free Models
+
+Use free models via OpenRouter (prompts may be published to public datasets):
+
+1. Get an API key from [openrouter.ai](https://openrouter.ai)
+2. Enable "free endpoints that may publish prompts" in [Privacy Settings](https://openrouter.ai/settings/privacy)
+3. Create `.env` file:
+
+```bash
+ANTHROPIC_BASE_URL=https://openrouter.ai/api
+ANTHROPIC_AUTH_TOKEN=your-openrouter-key
+ANTHROPIC_API_KEY=""
+ANTHROPIC_MODEL=openai/gpt-oss-120b:free
+ANTHROPIC_SMALL_FAST_MODEL=openai/gpt-oss-120b:free
+```
+
+4. Run with dotenv:
+
+```bash
+uv run python editor/server.py
+```
+
+See [CLAUDE.md](CLAUDE.md) for more details on free model options.
 
 ## Tech Stack
 
