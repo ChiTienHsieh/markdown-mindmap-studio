@@ -9,7 +9,7 @@
 
 English | [繁體中文](README-zh.tw.md)
 
-![Demo Screenshot](docs/images/demo.png)
+![Demo](docs/images/demo.gif)
 
 ## Features
 
