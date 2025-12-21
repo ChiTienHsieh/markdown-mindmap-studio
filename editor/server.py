@@ -20,10 +20,16 @@ import asyncio
 import json
 import logging
 import os
+import re
 from pathlib import Path
 from typing import Optional
 
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, Request
+from fastapi.middleware.cors import CORSMiddleware
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
 
 # Configure logging
 logging.basicConfig(
@@ -80,6 +86,29 @@ def load_agent_prompt() -> str:
     return CONFIG.get("agent", {}).get("systemPrompt", "You are a mindmap editor assistant.")
 
 app = FastAPI(title="Mindmap Editor")
+
+# --- Security: Rate Limiter ---
+limiter = Limiter(key_func=get_remote_address)
+app.state.limiter = limiter
+app.add_middleware(SlowAPIMiddleware)
+
+@app.exception_handler(RateLimitExceeded)
+async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
+    return HTTPException(status_code=429, detail="Rate limit exceeded. Try again later.")
+
+# --- Security: CORS Configuration ---
+# Restrict to localhost origins for local development
+# Modify this list if deploying to production
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+    ],
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["*"],
+)
 
 # WebSocket connections for live updates
 connected_clients: list[WebSocket] = []
@@ -188,6 +217,10 @@ async def get_config():
 @app.get("/api/locales/{locale}")
 async def get_locale(locale: str):
     """Get locale strings"""
+    # SECURITY: Validate locale format (e.g., "en", "zh-TW", "en-US")
+    if not re.match(r'^[a-z]{2}(-[A-Z]{2})?$', locale):
+        raise HTTPException(status_code=400, detail="Invalid locale format")
+
     locale_path = EDITOR_DIR / "locales" / f"{locale}.json"
     if not locale_path.exists():
         # Fallback to English
@@ -258,7 +291,8 @@ async def agent_status():
 
 
 @app.post("/api/agent/chat")
-async def agent_chat(request: AgentChatRequest):
+@limiter.limit("10/minute")  # Rate limit: 10 requests per minute per IP
+async def agent_chat(request: Request, chat_request: AgentChatRequest):
     """Chat with Claude Agent (streaming SSE response)"""
     if not AGENT_SDK_AVAILABLE:
         raise HTTPException(
@@ -278,7 +312,7 @@ async def agent_chat(request: AgentChatRequest):
             )
 
             async with ClaudeSDKClient(options=options) as client:
-                await client.query(request.message)
+                await client.query(chat_request.message)
 
                 async for message in client.receive_response():
                     # Handle different message types from the SDK
