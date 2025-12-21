@@ -466,6 +466,68 @@ body.light-theme .floating-toolbar {
 .floating-toolbar:hover .toolbar-toggle:nth-child(5) span { transition-delay: 0.09s; }
 .floating-toolbar:hover .toolbar-toggle:nth-child(6) span { transition-delay: 0.12s; }
 
+/* ===== EXPORT DROPDOWN ===== */
+
+.export-dropdown {
+    position: relative;
+}
+
+.export-menu {
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    margin-bottom: 8px;
+    background: rgba(30, 30, 35, 0.98);
+    border: 1px solid var(--border-subtle);
+    border-radius: 12px;
+    padding: 6px;
+    min-width: 160px;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateX(-50%) translateY(10px);
+    transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s;
+}
+
+.export-menu:not(.hidden) {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) translateY(0);
+}
+
+body.light-theme .export-menu {
+    background: rgba(255, 255, 255, 0.98);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+}
+
+.export-option {
+    display: block;
+    width: 100%;
+    padding: 10px 14px;
+    background: none;
+    border: none;
+    border-radius: 8px;
+    color: var(--text-secondary);
+    font-size: 13px;
+    font-weight: 500;
+    text-align: left;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.export-option:hover {
+    background: var(--accent-blue);
+    color: white;
+}
+
+.export-option:active {
+    transform: scale(0.98);
+}
+
 /* ===== SIDEBAR ===== */
 
 .sidebar {

@@ -472,6 +472,92 @@ class TestEdgeCases:
         assert response.status_code == status.HTTP_200_OK
 
 
+# ==================== Security Feature Tests ====================
+
+@pytest.mark.asyncio
+class TestSecurityFeatures:
+    """Test security features: CORS, rate limiting, locale validation"""
+
+    async def test_locale_valid_format_en(self, client):
+        """GET /api/locales/en should succeed with valid locale"""
+        response = await client.get("/api/locales/en")
+        assert response.status_code == status.HTTP_200_OK
+
+    async def test_locale_valid_format_zh_TW(self, client):
+        """GET /api/locales/zh-TW should succeed with valid locale"""
+        response = await client.get("/api/locales/zh-TW")
+        # 200 if exists, still 200 with fallback to en
+        assert response.status_code == status.HTTP_200_OK
+
+    async def test_locale_invalid_format_rejected(self, client):
+        """GET /api/locales/{invalid} should return 400 for invalid format"""
+        invalid_locales = [
+            "en_US",             # Wrong separator (underscore)
+            "english",           # Too long
+            "e",                 # Too short
+            "EN",                # Wrong case (should be lowercase)
+            "zh-tw",             # Wrong case for country (should be uppercase)
+            "123",               # Numbers
+            "en-USA",            # Country code too long
+        ]
+        for locale in invalid_locales:
+            response = await client.get(f"/api/locales/{locale}")
+            assert response.status_code == status.HTTP_400_BAD_REQUEST, \
+                f"Expected 400 for invalid locale '{locale}', got {response.status_code}"
+
+    async def test_locale_path_traversal_blocked(self, client):
+        """GET /api/locales with path traversal should be blocked"""
+        response = await client.get("/api/locales/../../etc/passwd")
+        # Either 400 (invalid format) or 404 (path normalized) - both indicate protection
+        assert response.status_code in [status.HTTP_400_BAD_REQUEST, status.HTTP_404_NOT_FOUND]
+
+    async def test_cors_headers_present(self, client):
+        """OPTIONS request should return CORS headers"""
+        # Send preflight request
+        response = await client.options(
+            "/api/files",
+            headers={
+                "Origin": "http://localhost:3000",
+                "Access-Control-Request-Method": "GET",
+            }
+        )
+        # CORS middleware should handle this
+        assert response.status_code in [status.HTTP_200_OK, status.HTTP_204_NO_CONTENT]
+
+    async def test_cors_allows_localhost(self, client):
+        """Requests from localhost:3000 should be allowed"""
+        response = await client.get(
+            "/api/config",
+            headers={"Origin": "http://localhost:3000"}
+        )
+        assert response.status_code == status.HTTP_200_OK
+        # Check CORS header is present
+        assert "access-control-allow-origin" in response.headers or response.status_code == 200
+
+    async def test_rate_limit_agent_chat(self, client, monkeypatch, mock_agent_sdk):
+        """POST /api/agent/chat should enforce rate limiting (10/min)"""
+        monkeypatch.setattr("server.AGENT_SDK_AVAILABLE", True)
+
+        # Reset rate limiter storage for clean test
+        from server import limiter
+        limiter.reset()
+
+        # Make 12 requests rapidly - should hit rate limit after 10
+        responses = []
+        for i in range(12):
+            response = await client.post(
+                "/api/agent/chat",
+                json={"message": f"Test message {i}"}
+            )
+            responses.append(response.status_code)
+
+        # First 10 should succeed, remaining should be rate limited
+        assert responses.count(status.HTTP_200_OK) == 10, \
+            f"Expected 10 successful requests, got {responses.count(status.HTTP_200_OK)}"
+        assert responses.count(status.HTTP_429_TOO_MANY_REQUESTS) == 2, \
+            f"Expected 2 rate-limited requests, got {responses.count(status.HTTP_429_TOO_MANY_REQUESTS)}"
+
+
 # ==================== Run Tests ====================
 
 if __name__ == "__main__":

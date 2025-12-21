@@ -70,6 +70,22 @@
                     </svg>
                     <span>Edit</span>
                 </label>
+                <div class="toolbar-divider"></div>
+                <div class="export-dropdown" id="export-dropdown">
+                    <button class="toolbar-toggle" id="btn-export" title="Export">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                            <polyline points="7 10 12 15 17 10"/>
+                            <line x1="12" y1="15" x2="12" y2="3"/>
+                        </svg>
+                        <span>Export</span>
+                    </button>
+                    <div class="export-menu hidden" id="export-menu">
+                        <button id="export-png" class="export-option">PNG Image</button>
+                        <button id="export-html" class="export-option">HTML (Interactive)</button>
+                        <button id="export-pdf" class="export-option">PDF Document</button>
+                    </div>
+                </div>
             </div>
 
             <!-- File sidebar - Hidden by default -->

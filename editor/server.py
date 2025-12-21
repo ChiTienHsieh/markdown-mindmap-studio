@@ -94,7 +94,11 @@ app.add_middleware(SlowAPIMiddleware)
 
 @app.exception_handler(RateLimitExceeded)
 async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
-    return HTTPException(status_code=429, detail="Rate limit exceeded. Try again later.")
+    from fastapi.responses import JSONResponse
+    return JSONResponse(
+        status_code=429,
+        content={"detail": "Rate limit exceeded. Try again later."}
+    )
 
 # --- Security: CORS Configuration ---
 # Restrict to localhost origins for local development
@@ -271,6 +275,74 @@ async def get_tree():
         "title": CONFIG.get("project", {}).get("title", "Mindmap"),
         "modules": modules
     }
+
+
+# --- Export API ---
+
+@app.get("/api/export/pdf")
+async def export_pdf():
+    """Generate and return PDF export of mindmap spec document"""
+    import subprocess
+    import tempfile
+
+    try:
+        # Run export script
+        result = subprocess.run(
+            ["uv", "run", "python", str(PROJECT_ROOT / "scripts" / "export_mindmap.py")],
+            cwd=str(PROJECT_ROOT),
+            capture_output=True,
+            text=True,
+            timeout=60
+        )
+
+        pdf_path = PROJECT_ROOT / "exports" / "mindmap_spec.pdf"
+        if pdf_path.exists():
+            return FileResponse(
+                path=str(pdf_path),
+                filename="mindmap_spec.pdf",
+                media_type="application/pdf"
+            )
+        else:
+            logger.warning(f"PDF export failed: {result.stderr}")
+            raise HTTPException(status_code=500, detail="PDF generation failed. Check server logs.")
+
+    except subprocess.TimeoutExpired:
+        raise HTTPException(status_code=504, detail="Export timed out")
+    except Exception as e:
+        logger.error(f"Export error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/export/html")
+async def export_html():
+    """Generate and return interactive HTML mindmap"""
+    import subprocess
+
+    try:
+        # Run export script
+        subprocess.run(
+            ["uv", "run", "python", str(PROJECT_ROOT / "scripts" / "export_mindmap.py")],
+            cwd=str(PROJECT_ROOT),
+            capture_output=True,
+            text=True,
+            timeout=60
+        )
+
+        html_path = PROJECT_ROOT / "exports" / "mindmap.html"
+        if html_path.exists():
+            return FileResponse(
+                path=str(html_path),
+                filename="mindmap.html",
+                media_type="text/html"
+            )
+        else:
+            raise HTTPException(status_code=500, detail="HTML generation failed")
+
+    except subprocess.TimeoutExpired:
+        raise HTTPException(status_code=504, detail="Export timed out")
+    except Exception as e:
+        logger.error(f"Export error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 # --- Claude Agent SDK ---

@@ -183,6 +183,12 @@ const elements = {
     aiResponseActions: document.getElementById('ai-response-actions'),
     aiApply: document.getElementById('ai-apply'),
     aiCopy: document.getElementById('ai-copy'),
+    // Export elements
+    btnExport: document.getElementById('btn-export'),
+    exportMenu: document.getElementById('export-menu'),
+    exportPng: document.getElementById('export-png'),
+    exportHtml: document.getElementById('export-html'),
+    exportPdf: document.getElementById('export-pdf'),
 };
 
 // Color palettes for different themes
@@ -749,6 +755,144 @@ function setupEventListeners() {
 
     // Resize handle
     setupResizeHandle();
+
+    // Export dropdown
+    setupExportDropdown();
+}
+
+// --- Export Functions ---
+
+function setupExportDropdown() {
+    const { btnExport, exportMenu, exportPng, exportHtml, exportPdf } = elements;
+
+    // Toggle dropdown on button click
+    btnExport?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        exportMenu.classList.toggle('hidden');
+    });
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.export-dropdown')) {
+            exportMenu?.classList.add('hidden');
+        }
+    });
+
+    // Export PNG
+    exportPng?.addEventListener('click', () => {
+        exportMenu.classList.add('hidden');
+        exportToPng();
+    });
+
+    // Export HTML
+    exportHtml?.addEventListener('click', () => {
+        exportMenu.classList.add('hidden');
+        exportToHtml();
+    });
+
+    // Export PDF
+    exportPdf?.addEventListener('click', () => {
+        exportMenu.classList.add('hidden');
+        exportToPdf();
+    });
+}
+
+async function exportToPng() {
+    const svg = elements.mindmap;
+    if (!svg) return;
+
+    try {
+        // Get SVG dimensions
+        const bbox = svg.getBBox();
+        const width = bbox.width + 40;
+        const height = bbox.height + 40;
+
+        // Clone SVG and prepare for export
+        const clonedSvg = svg.cloneNode(true);
+        clonedSvg.setAttribute('width', width);
+        clonedSvg.setAttribute('height', height);
+        clonedSvg.setAttribute('viewBox', `${bbox.x - 20} ${bbox.y - 20} ${width} ${height}`);
+
+        // Add background
+        const bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        bg.setAttribute('x', bbox.x - 20);
+        bg.setAttribute('y', bbox.y - 20);
+        bg.setAttribute('width', width);
+        bg.setAttribute('height', height);
+        bg.setAttribute('fill', document.body.classList.contains('light-theme') ? '#ffffff' : '#09090b');
+        clonedSvg.insertBefore(bg, clonedSvg.firstChild);
+
+        // Serialize SVG
+        const serializer = new XMLSerializer();
+        const svgString = serializer.serializeToString(clonedSvg);
+        const svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+        const url = URL.createObjectURL(svgBlob);
+
+        // Create image and canvas
+        const img = new Image();
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const scale = 2; // 2x resolution for crisp export
+            canvas.width = width * scale;
+            canvas.height = height * scale;
+
+            const ctx = canvas.getContext('2d');
+            ctx.scale(scale, scale);
+            ctx.drawImage(img, 0, 0);
+
+            // Download
+            canvas.toBlob((blob) => {
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = 'mindmap.png';
+                a.click();
+                URL.revokeObjectURL(a.href);
+            }, 'image/png');
+
+            URL.revokeObjectURL(url);
+        };
+        img.src = url;
+    } catch (err) {
+        console.error('PNG export failed:', err);
+        alert('PNG export failed. Please try again.');
+    }
+}
+
+async function exportToHtml() {
+    try {
+        const response = await fetch('/api/export/html');
+        if (!response.ok) throw new Error('Export failed');
+
+        const blob = await response.blob();
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'mindmap.html';
+        a.click();
+        URL.revokeObjectURL(a.href);
+    } catch (err) {
+        console.error('HTML export failed:', err);
+        alert('HTML export failed. Please try again.');
+    }
+}
+
+async function exportToPdf() {
+    try {
+        const response = await fetch('/api/export/pdf');
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.detail || 'Export failed');
+        }
+
+        const blob = await response.blob();
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'mindmap_spec.pdf';
+        a.click();
+        URL.revokeObjectURL(a.href);
+    } catch (err) {
+        console.error('PDF export failed:', err);
+        alert('PDF export failed: ' + err.message);
+    }
 }
 
 // Enable click-to-edit on mindmap nodes
