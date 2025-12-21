@@ -234,6 +234,32 @@ async function loadConfig() {
     }
 }
 
+// Available locales - add new languages here
+const AVAILABLE_LOCALES = ['en', 'zh-TW'];
+
+// Detect browser's preferred locale from navigator.languages
+function detectBrowserLocale(defaultLocale = 'en') {
+    const languages = navigator.languages || [navigator.language];
+
+    for (const lang of languages) {
+        // Exact match (e.g., "zh-TW" matches "zh-TW")
+        if (AVAILABLE_LOCALES.includes(lang)) {
+            return lang;
+        }
+        // Base language match (e.g., "zh-CN", "zh-Hans" → "zh-TW")
+        const baseLang = lang.split('-')[0];
+        if (baseLang === 'zh') {
+            return 'zh-TW'; // Default Chinese variant
+        }
+        // Other base matches (e.g., "en-US", "en-GB" → "en")
+        const baseMatch = AVAILABLE_LOCALES.find(l => l.startsWith(baseLang));
+        if (baseMatch) {
+            return baseMatch;
+        }
+    }
+    return defaultLocale;
+}
+
 // Load locale strings from server
 async function loadLocale() {
     try {
@@ -241,9 +267,10 @@ async function loadLocale() {
         const projectTitle = config.project?.title || 'Mindmap';
         const defaultLocale = config.ui?.defaultLocale || 'en';
 
-        // Check browser preference
-        const browserLang = navigator.language.startsWith('zh') ? 'zh-TW' : 'en';
-        const targetLocale = localStorage.getItem('mindmap-locale') || browserLang;
+        // Priority: localStorage > browser preference > config default
+        const storedLocale = localStorage.getItem('mindmap-locale');
+        const browserLocale = detectBrowserLocale(defaultLocale);
+        const targetLocale = storedLocale || browserLocale;
 
         const response = await fetch(`/api/locales/${targetLocale}`);
         if (response.ok) {
