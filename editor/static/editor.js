@@ -26,6 +26,12 @@ const state = {
     aiResponse: '',   // Current AI response for apply/copy
     isDarkTheme: true,   // Theme state (default: dark)
     isFullscreen: false, // Fullscreen state
+    // Panel visibility state (minimalist mode)
+    panels: {
+        sidebar: false,   // Files panel - hidden by default
+        editor: false,    // Editor panel - hidden by default
+        agent: false,     // Agent panel - hidden by default
+    }
 };
 
 // Application configuration (loaded from server)
@@ -1366,5 +1372,106 @@ function scrollAgentToBottom() {
     agentElements.messages.scrollTop = agentElements.messages.scrollHeight;
 }
 
+// ===== FLOATING TOOLBAR / PANEL TOGGLES =====
+
+// Panel toggle elements
+const panelElements = {
+    sidebar: document.getElementById('sidebar'),
+    editorPane: document.getElementById('editor-pane'),
+    agentPanel: document.getElementById('agent-panel'),
+    resizeHandle: document.getElementById('resize-handle'),
+    // Toggle buttons
+    btnToggleSidebar: document.getElementById('btn-toggle-sidebar'),
+    btnToggleEditor: document.getElementById('btn-toggle-editor'),
+    btnToggleAgent: document.getElementById('btn-toggle-agent'),
+};
+
+// Toggle panel visibility
+function togglePanel(panelName) {
+    state.panels[panelName] = !state.panels[panelName];
+    updatePanelVisibility();
+}
+
+// Update panel visibility based on state
+function updatePanelVisibility() {
+    const { sidebar, editor, agent } = state.panels;
+
+    // Sidebar
+    if (panelElements.sidebar) {
+        panelElements.sidebar.classList.toggle('collapsed', !sidebar);
+    }
+    if (panelElements.btnToggleSidebar) {
+        panelElements.btnToggleSidebar.classList.toggle('active', sidebar);
+    }
+
+    // Editor
+    if (panelElements.editorPane) {
+        panelElements.editorPane.classList.toggle('collapsed', !editor);
+    }
+    if (panelElements.resizeHandle) {
+        panelElements.resizeHandle.classList.toggle('hidden', !editor);
+    }
+    if (panelElements.btnToggleEditor) {
+        panelElements.btnToggleEditor.classList.toggle('active', editor);
+    }
+
+    // Agent panel
+    if (panelElements.agentPanel) {
+        panelElements.agentPanel.classList.toggle('hidden-panel', !agent);
+    }
+    if (panelElements.btnToggleAgent) {
+        panelElements.btnToggleAgent.classList.toggle('active', agent);
+    }
+
+    // Fit mindmap after panel changes
+    setTimeout(() => {
+        state.markmap?._originalFit?.() || state.markmap?.fit();
+    }, 400);
+}
+
+// Setup floating toolbar
+function setupFloatingToolbar() {
+    // Toggle sidebar (Files)
+    if (panelElements.btnToggleSidebar) {
+        panelElements.btnToggleSidebar.addEventListener('click', () => togglePanel('sidebar'));
+    }
+
+    // Toggle editor
+    if (panelElements.btnToggleEditor) {
+        panelElements.btnToggleEditor.addEventListener('click', () => togglePanel('editor'));
+    }
+
+    // Toggle agent panel
+    if (panelElements.btnToggleAgent) {
+        panelElements.btnToggleAgent.addEventListener('click', () => togglePanel('agent'));
+    }
+
+    // Keyboard shortcuts for panels
+    document.addEventListener('keydown', (e) => {
+        if (e.metaKey || e.ctrlKey) {
+            switch (e.key) {
+                case '1':
+                    e.preventDefault();
+                    togglePanel('sidebar');
+                    break;
+                case '2':
+                    e.preventDefault();
+                    togglePanel('editor');
+                    break;
+                case '3':
+                    e.preventDefault();
+                    togglePanel('agent');
+                    break;
+            }
+        }
+    });
+
+    // Initialize panel state
+    updatePanelVisibility();
+}
+
 // Start the app
-document.addEventListener('DOMContentLoaded', init);
+document.addEventListener('DOMContentLoaded', () => {
+    init();
+    setupFloatingToolbar();
+});

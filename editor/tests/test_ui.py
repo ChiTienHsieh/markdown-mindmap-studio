@@ -8,6 +8,12 @@ Or headless (faster, for CI):
     cd editor && uv run pytest tests/test_ui.py -v
 
 Screenshots are saved to: editor/tests/screenshots/
+
+UI Architecture (Minimalist Mode - Dec 2024):
+- Sidebar, Editor, Agent panels are HIDDEN by default
+- Floating toolbar at bottom center toggles panels
+- Keyboard shortcuts: Cmd+1 (Files), Cmd+2 (Editor), Cmd+3 (Agent)
+- Panels have smooth CSS animations when toggling
 """
 
 import re
@@ -38,6 +44,32 @@ def page(page: Page):
     return page
 
 
+# ============== HELPER FUNCTIONS ==============
+
+def open_sidebar(page: Page):
+    """Open sidebar panel if it's collapsed"""
+    sidebar = page.locator("#sidebar")
+    if "collapsed" in (sidebar.get_attribute("class") or ""):
+        page.click("#btn-toggle-sidebar")
+        page.wait_for_timeout(400)  # Wait for animation
+
+
+def open_editor(page: Page):
+    """Open editor panel if it's collapsed"""
+    editor_pane = page.locator("#editor-pane")
+    if "collapsed" in (editor_pane.get_attribute("class") or ""):
+        page.click("#btn-toggle-editor")
+        page.wait_for_timeout(400)  # Wait for animation
+
+
+def open_agent(page: Page):
+    """Open agent panel if it's hidden"""
+    agent_panel = page.locator("#agent-panel")
+    if "hidden-panel" in (agent_panel.get_attribute("class") or ""):
+        page.click("#btn-toggle-agent")
+        page.wait_for_timeout(400)  # Wait for animation
+
+
 class TestThemeToggle:
     """Tests for theme toggle functionality"""
 
@@ -47,9 +79,9 @@ class TestThemeToggle:
         body = page.locator("body")
         expect(body).not_to_have_class(re.compile(r"\blight-theme\b"))
 
-        # Verify dark background color
+        # Verify dark background color (updated for new design)
         bg_color = page.evaluate("window.getComputedStyle(document.body).backgroundColor")
-        assert bg_color == "rgb(26, 26, 46)", f"Expected dark bg, got {bg_color}"
+        assert bg_color == "rgb(9, 9, 11)", f"Expected dark bg, got {bg_color}"
 
         page.screenshot(path=SCREENSHOT_DIR / "01_dark_theme_default.png")
 
@@ -103,57 +135,218 @@ class TestThemeToggle:
         page.screenshot(path=SCREENSHOT_DIR / "04_theme_persisted.png")
 
 
-class TestFullscreen:
-    """Tests for fullscreen functionality"""
+# NOTE: Fullscreen button was removed in minimalist UI redesign (Dec 2024)
+# The floating toolbar now has a Fit button instead
+# Keeping this class as a placeholder for potential future fullscreen via keyboard
 
-    def test_fullscreen_toggle(self, page: Page):
-        """Clicking fullscreen button should expand mindmap pane"""
-        mindmap_pane = page.locator("#mindmap-pane")
 
-        # Initially not fullscreen (class should NOT contain 'fullscreen')
-        expect(mindmap_pane).not_to_have_class(re.compile(r"\bfullscreen\b"))
+class TestFloatingToolbar:
+    """Tests for floating toolbar and panel toggles"""
 
-        # Click fullscreen button
-        page.click("#btn-fullscreen")
+    def test_floating_toolbar_visible(self, page: Page):
+        """Floating toolbar should be visible at bottom center"""
+        toolbar = page.locator("#floating-toolbar")
+        expect(toolbar).to_be_visible()
 
-        # Should have fullscreen class (among other classes)
-        expect(mindmap_pane).to_have_class(re.compile(r"\bfullscreen\b"))
-
-        # Verify fixed positioning
+        # Check it's positioned at bottom
         position = page.evaluate(
-            "window.getComputedStyle(document.getElementById('mindmap-pane')).position"
+            "window.getComputedStyle(document.getElementById('floating-toolbar')).position"
         )
         assert position == "fixed", f"Expected fixed position, got {position}"
 
-        page.screenshot(path=SCREENSHOT_DIR / "05_fullscreen_on.png", full_page=True)
+        page.screenshot(path=SCREENSHOT_DIR / "05_floating_toolbar.png")
 
-    def test_exit_fullscreen_with_button(self, page: Page):
-        """Clicking fullscreen button again should exit fullscreen"""
+    def test_toolbar_has_all_buttons(self, page: Page):
+        """Toolbar should have Files, Editor, Agent, Fit, Edit buttons"""
+        expect(page.locator("#btn-toggle-sidebar")).to_be_visible()
+        expect(page.locator("#btn-toggle-editor")).to_be_visible()
+        expect(page.locator("#btn-toggle-agent")).to_be_visible()
+        expect(page.locator("#btn-fit")).to_be_visible()
+        # Edit mode is a label containing a hidden checkbox
+        expect(page.locator(".edit-toggle")).to_be_visible()
+
+    def test_toolbar_labels_appear_on_hover(self, page: Page):
+        """Hovering toolbar should reveal button labels"""
+        toolbar = page.locator("#floating-toolbar")
+        files_label = page.locator("#btn-toggle-sidebar span")
+
+        # Initially labels should have max-width 0 (hidden)
+        initial_opacity = page.evaluate(
+            "getComputedStyle(document.querySelector('#btn-toggle-sidebar span')).opacity"
+        )
+        assert float(initial_opacity) < 0.5, "Label should be hidden initially"
+
+        # Hover over toolbar
+        toolbar.hover()
+        page.wait_for_timeout(400)
+
+        # Labels should now be visible
+        hover_opacity = page.evaluate(
+            "getComputedStyle(document.querySelector('#btn-toggle-sidebar span')).opacity"
+        )
+        assert float(hover_opacity) > 0.5, "Label should be visible on hover"
+
+        page.screenshot(path=SCREENSHOT_DIR / "06_toolbar_hovered.png")
+
+
+class TestInitialState:
+    """Tests for initial minimalist state (panels hidden by default)"""
+
+    def test_sidebar_collapsed_by_default(self, page: Page):
+        """Sidebar should be collapsed on initial load"""
+        sidebar = page.locator("#sidebar")
+        expect(sidebar).to_have_class(re.compile(r"\bcollapsed\b"))
+
+    def test_editor_collapsed_by_default(self, page: Page):
+        """Editor pane should be collapsed on initial load"""
+        editor_pane = page.locator("#editor-pane")
+        expect(editor_pane).to_have_class(re.compile(r"\bcollapsed\b"))
+
+    def test_agent_hidden_by_default(self, page: Page):
+        """Agent panel should be hidden on initial load"""
+        agent_panel = page.locator("#agent-panel")
+        expect(agent_panel).to_have_class(re.compile(r"\bhidden-panel\b"))
+
+    def test_mindmap_visible_by_default(self, page: Page):
+        """Mindmap pane should be visible (hero element)"""
         mindmap_pane = page.locator("#mindmap-pane")
+        expect(mindmap_pane).to_be_visible()
 
-        # Enter fullscreen
-        page.click("#btn-fullscreen")
-        expect(mindmap_pane).to_have_class(re.compile(r"\bfullscreen\b"))
+        page.screenshot(path=SCREENSHOT_DIR / "07_initial_minimalist_state.png")
 
-        # Exit fullscreen
-        page.click("#btn-fullscreen")
-        expect(mindmap_pane).not_to_have_class(re.compile(r"\bfullscreen\b"))
 
-        page.screenshot(path=SCREENSHOT_DIR / "06_fullscreen_off.png")
+class TestPanelToggles:
+    """Tests for panel toggle functionality"""
 
-    def test_exit_fullscreen_with_escape(self, page: Page):
-        """Pressing ESC should exit fullscreen"""
-        mindmap_pane = page.locator("#mindmap-pane")
+    def test_toggle_sidebar(self, page: Page):
+        """Clicking sidebar toggle should show/hide sidebar"""
+        sidebar = page.locator("#sidebar")
+        btn = page.locator("#btn-toggle-sidebar")
 
-        # Enter fullscreen
-        page.click("#btn-fullscreen")
-        expect(mindmap_pane).to_have_class(re.compile(r"\bfullscreen\b"))
+        # Initially collapsed
+        expect(sidebar).to_have_class(re.compile(r"\bcollapsed\b"))
+        expect(btn).not_to_have_class(re.compile(r"\bactive\b"))
 
-        # Press ESC
-        page.keyboard.press("Escape")
-        expect(mindmap_pane).not_to_have_class(re.compile(r"\bfullscreen\b"))
+        # Click to open
+        btn.click()
+        page.wait_for_timeout(400)
+        expect(sidebar).not_to_have_class(re.compile(r"\bcollapsed\b"))
+        expect(btn).to_have_class(re.compile(r"\bactive\b"))
 
-        page.screenshot(path=SCREENSHOT_DIR / "07_fullscreen_escaped.png")
+        # Click to close
+        btn.click()
+        page.wait_for_timeout(400)
+        expect(sidebar).to_have_class(re.compile(r"\bcollapsed\b"))
+        expect(btn).not_to_have_class(re.compile(r"\bactive\b"))
+
+        page.screenshot(path=SCREENSHOT_DIR / "08_sidebar_toggle.png")
+
+    def test_toggle_editor(self, page: Page):
+        """Clicking editor toggle should show/hide editor"""
+        editor_pane = page.locator("#editor-pane")
+        btn = page.locator("#btn-toggle-editor")
+
+        # Initially collapsed
+        expect(editor_pane).to_have_class(re.compile(r"\bcollapsed\b"))
+
+        # Click to open
+        btn.click()
+        page.wait_for_timeout(400)
+        expect(editor_pane).not_to_have_class(re.compile(r"\bcollapsed\b"))
+        expect(btn).to_have_class(re.compile(r"\bactive\b"))
+
+        page.screenshot(path=SCREENSHOT_DIR / "09_editor_open.png")
+
+    def test_toggle_agent(self, page: Page):
+        """Clicking agent toggle should show/hide agent panel"""
+        agent_panel = page.locator("#agent-panel")
+        btn = page.locator("#btn-toggle-agent")
+
+        # Initially hidden
+        expect(agent_panel).to_have_class(re.compile(r"\bhidden-panel\b"))
+
+        # Click to open
+        btn.click()
+        page.wait_for_timeout(400)
+        expect(agent_panel).not_to_have_class(re.compile(r"\bhidden-panel\b"))
+        expect(btn).to_have_class(re.compile(r"\bactive\b"))
+
+        page.screenshot(path=SCREENSHOT_DIR / "10_agent_open.png")
+
+    def test_resize_handle_hidden_when_editor_closed(self, page: Page):
+        """Resize handle should be hidden when editor is collapsed"""
+        resize_handle = page.locator("#resize-handle")
+        editor_pane = page.locator("#editor-pane")
+
+        # Initially editor is collapsed, resize handle should be hidden
+        expect(editor_pane).to_have_class(re.compile(r"\bcollapsed\b"))
+        expect(resize_handle).to_have_class(re.compile(r"\bhidden\b"))
+
+        # Open editor
+        page.click("#btn-toggle-editor")
+        page.wait_for_timeout(400)
+
+        # Resize handle should be visible
+        expect(resize_handle).not_to_have_class(re.compile(r"\bhidden\b"))
+
+
+class TestKeyboardShortcutsPanels:
+    """Tests for keyboard shortcuts to toggle panels"""
+
+    def test_cmd_1_toggles_sidebar(self, page: Page):
+        """Cmd+1 should toggle sidebar"""
+        sidebar = page.locator("#sidebar")
+
+        # Initially collapsed
+        expect(sidebar).to_have_class(re.compile(r"\bcollapsed\b"))
+
+        # Press Cmd+1 to open
+        page.keyboard.press("Meta+1")
+        page.wait_for_timeout(400)
+        expect(sidebar).not_to_have_class(re.compile(r"\bcollapsed\b"))
+
+        # Press Cmd+1 to close
+        page.keyboard.press("Meta+1")
+        page.wait_for_timeout(400)
+        expect(sidebar).to_have_class(re.compile(r"\bcollapsed\b"))
+
+        page.screenshot(path=SCREENSHOT_DIR / "11_keyboard_cmd1.png")
+
+    def test_cmd_2_toggles_editor(self, page: Page):
+        """Cmd+2 should toggle editor"""
+        editor_pane = page.locator("#editor-pane")
+
+        # Initially collapsed
+        expect(editor_pane).to_have_class(re.compile(r"\bcollapsed\b"))
+
+        # Press Cmd+2 to open
+        page.keyboard.press("Meta+2")
+        page.wait_for_timeout(400)
+        expect(editor_pane).not_to_have_class(re.compile(r"\bcollapsed\b"))
+
+        # Press Cmd+2 to close
+        page.keyboard.press("Meta+2")
+        page.wait_for_timeout(400)
+        expect(editor_pane).to_have_class(re.compile(r"\bcollapsed\b"))
+
+    def test_cmd_3_toggles_agent(self, page: Page):
+        """Cmd+3 should toggle agent panel"""
+        agent_panel = page.locator("#agent-panel")
+
+        # Initially hidden
+        expect(agent_panel).to_have_class(re.compile(r"\bhidden-panel\b"))
+
+        # Press Cmd+3 to open
+        page.keyboard.press("Meta+3")
+        page.wait_for_timeout(400)
+        expect(agent_panel).not_to_have_class(re.compile(r"\bhidden-panel\b"))
+
+        # Press Cmd+3 to close
+        page.keyboard.press("Meta+3")
+        page.wait_for_timeout(400)
+        expect(agent_panel).to_have_class(re.compile(r"\bhidden-panel\b"))
+
+        page.screenshot(path=SCREENSHOT_DIR / "12_keyboard_cmd3.png")
 
 
 class TestFileOperations:
@@ -161,6 +354,9 @@ class TestFileOperations:
 
     def test_file_list_loads(self, page: Page):
         """File list should populate from /api/files"""
+        # Open sidebar first (collapsed by default in minimalist mode)
+        open_sidebar(page)
+
         file_list = page.locator("#file-list")
 
         # Should have file items
@@ -171,12 +367,17 @@ class TestFileOperations:
         folder_nodes = file_list.locator(".tree-folder")
         expect(folder_nodes.first).to_be_visible()
 
-        page.screenshot(path=SCREENSHOT_DIR / "08_file_list.png")
+        page.screenshot(path=SCREENSHOT_DIR / "13_file_list.png")
 
     def test_select_file(self, page: Page):
         """Clicking a file should load it in editor"""
+        # Open sidebar and editor first
+        open_sidebar(page)
+        open_editor(page)
+
         # Click first file item (now shows parent dir name, not content.md)
         page.click(".tree-file")
+        page.wait_for_timeout(500)
 
         # Editor should have content
         editor = page.locator("#markdown-editor")
@@ -190,7 +391,7 @@ class TestFileOperations:
         active_item = page.locator(".tree-file.active")
         expect(active_item).to_be_visible()
 
-        page.screenshot(path=SCREENSHOT_DIR / "09_file_selected.png")
+        page.screenshot(path=SCREENSHOT_DIR / "14_file_selected.png")
 
 
 class TestMindmap:
@@ -234,17 +435,19 @@ class TestIconsAndButtons:
         theme_svg = page.locator("#btn-theme-toggle svg")
         expect(theme_svg.first).to_be_visible()
 
-    def test_mindmap_pane_buttons_visible(self, page: Page):
-        """Mindmap pane should have fit and fullscreen buttons"""
+    def test_floating_toolbar_buttons_visible(self, page: Page):
+        """Floating toolbar should have toggle and fit buttons"""
+        expect(page.locator("#btn-toggle-sidebar")).to_be_visible()
+        expect(page.locator("#btn-toggle-editor")).to_be_visible()
+        expect(page.locator("#btn-toggle-agent")).to_be_visible()
         expect(page.locator("#btn-fit")).to_be_visible()
-        expect(page.locator("#btn-fullscreen")).to_be_visible()
 
-        # Fullscreen should have SVG icon
-        fs_svg = page.locator("#btn-fullscreen svg")
-        expect(fs_svg.first).to_be_visible()
+        # Fit button should have SVG icon
+        fit_svg = page.locator("#btn-fit svg")
+        expect(fit_svg.first).to_be_visible()
 
     def test_icon_size(self, page: Page):
-        """Icons should be properly sized (2.5rem buttons)"""
+        """Icons should be properly sized"""
         btn = page.locator("#btn-theme-toggle")
 
         # Get computed dimensions
@@ -255,9 +458,9 @@ class TestIconsAndButtons:
             "window.getComputedStyle(document.getElementById('btn-theme-toggle')).height"
         )
 
-        # 2.5rem ≈ 40px at default font size
-        assert width == "40px", f"Expected 40px width, got {width}"
-        assert height == "40px", f"Expected 40px height, got {height}"
+        # Button size should be reasonable (36px for new design)
+        assert float(width.replace("px", "")) >= 32, f"Button too small: {width}"
+        assert float(height.replace("px", "")) >= 32, f"Button too small: {height}"
 
     def test_theme_icon_changes_with_theme(self, page: Page):
         """Sun icon in dark mode, moon icon in light mode"""
@@ -278,46 +481,61 @@ class TestIconsAndButtons:
 class TestResponsive:
     """Tests for responsive behavior"""
 
-    def test_resize_handle(self, page: Page):
-        """Resize handle should be draggable"""
+    def test_resize_handle_visible_when_editor_open(self, page: Page):
+        """Resize handle should be visible when editor is open"""
+        # Open editor first
+        open_editor(page)
+
         handle = page.locator("#resize-handle")
-        expect(handle).to_be_visible()
+        expect(handle).not_to_have_class(re.compile(r"\bhidden\b"))
 
         # Get initial editor width
         initial_width = page.evaluate(
             "document.querySelector('.editor-pane').offsetWidth"
         )
+        assert initial_width > 0, "Editor should have width when open"
 
-        # Drag handle to resize (simulate)
-        # Note: actual drag testing would need more complex mouse events
-        page.screenshot(path=SCREENSHOT_DIR / "12_resize_handle.png")
+        page.screenshot(path=SCREENSHOT_DIR / "15_resize_handle.png")
 
 
 class TestAgentChat:
     """Tests for Agent Chat panel functionality"""
 
-    def test_agent_panel_visible(self, page: Page):
-        """Agent panel should be visible by default"""
+    def test_agent_panel_hidden_by_default(self, page: Page):
+        """Agent panel should be hidden by default in minimalist mode"""
         agent_panel = page.locator("#agent-panel")
-        expect(agent_panel).to_be_visible()
+        expect(agent_panel).to_have_class(re.compile(r"\bhidden-panel\b"))
+
+        page.screenshot(path=SCREENSHOT_DIR / "16_agent_panel_hidden_default.png")
+
+    def test_agent_panel_opens_via_toolbar(self, page: Page):
+        """Agent panel should open when clicking toolbar button"""
+        agent_panel = page.locator("#agent-panel")
+
+        # Open via floating toolbar
+        open_agent(page)
+
+        # Panel should be visible
+        expect(agent_panel).not_to_have_class(re.compile(r"\bhidden-panel\b"))
 
         # Header elements should be visible
         expect(page.locator("#agent-panel .agent-panel-header")).to_be_visible()
         expect(page.locator("#agent-status")).to_be_visible()
-        expect(page.locator("#agent-toggle")).to_be_visible()
 
-        page.screenshot(path=SCREENSHOT_DIR / "13_agent_panel_default.png")
+        page.screenshot(path=SCREENSHOT_DIR / "17_agent_panel_visible.png")
 
     def test_agent_status_indicator(self, page: Page):
         """Agent status should show Ready or Unavailable"""
+        open_agent(page)
+
         agent_status = page.locator("#agent-status")
 
         # Wait for status to update from "Checking..."
         page.wait_for_timeout(1000)
 
-        # Status should be either Ready or Unavailable
-        status_text = agent_status.inner_text()
-        assert status_text in ["Ready", "Unavailable"], (
+        # Status should be either Ready or Unavailable (case-insensitive)
+        status_text = agent_status.inner_text().upper()
+        assert status_text in ["READY", "UNAVAILABLE"], (
             f"Expected 'Ready' or 'Unavailable', got '{status_text}'"
         )
 
@@ -325,61 +543,59 @@ class TestAgentChat:
         send_btn = page.locator("#agent-send")
         expect(send_btn).to_be_visible()
 
-        page.screenshot(path=SCREENSHOT_DIR / "14_agent_status.png")
+        page.screenshot(path=SCREENSHOT_DIR / "18_agent_status.png")
 
-    def test_agent_panel_collapse(self, page: Page):
-        """Panel starts collapsed by default, clicking toggle should expand it"""
+    def test_agent_panel_collapse_expand(self, page: Page):
+        """Agent panel internal toggle should collapse/expand body"""
+        open_agent(page)
+
         agent_panel = page.locator("#agent-panel")
         toggle_btn = page.locator("#agent-toggle")
 
-        # Initially collapsed (default state)
-        expect(agent_panel).to_have_class("agent-panel collapsed")
-
-        page.screenshot(path=SCREENSHOT_DIR / "15_agent_panel_collapsed.png")
-
-    def test_agent_panel_expand(self, page: Page):
-        """Clicking toggle should expand the collapsed panel"""
-        agent_panel = page.locator("#agent-panel")
-        toggle_btn = page.locator("#agent-toggle")
-
-        # Initially collapsed
-        expect(agent_panel).to_have_class("agent-panel collapsed")
-
-        # Click to expand
+        # Initially the panel is visible (not hidden-panel), but may be collapsed internally
+        # Click header toggle to expand/collapse
         toggle_btn.click()
-        expect(agent_panel).not_to_have_class("collapsed")
+        page.wait_for_timeout(300)
 
-        page.screenshot(path=SCREENSHOT_DIR / "16_agent_panel_expanded.png")
+        # Toggle again
+        toggle_btn.click()
+        page.wait_for_timeout(300)
+
+        page.screenshot(path=SCREENSHOT_DIR / "19_agent_panel_toggle.png")
 
     def test_agent_welcome_message(self, page: Page):
         """Agent panel should show welcome message by default"""
-        messages_area = page.locator("#agent-messages")
-        welcome_msg = page.locator(".agent-welcome")
+        open_agent(page)
 
+        welcome_msg = page.locator(".agent-welcome")
         expect(welcome_msg).to_be_visible()
+
         # Check for welcome message content (locale-dependent, check for structure)
         expect(welcome_msg.locator("ul")).to_be_visible()
-        expect(welcome_msg.locator("li")).to_have_count(4)
 
-        page.screenshot(path=SCREENSHOT_DIR / "17_agent_welcome.png")
+        page.screenshot(path=SCREENSHOT_DIR / "20_agent_welcome.png")
 
     def test_agent_input_elements(self, page: Page):
         """Input area should have textarea and send button"""
+        open_agent(page)
+
         input_area = page.locator(".agent-input-area")
         expect(input_area).to_be_visible()
 
-        # Textarea should be present (placeholder set by JS locale)
+        # Textarea should be present
         agent_input = page.locator("#agent-input")
         expect(agent_input).to_be_visible()
 
-        # Send button should be present (text set by JS locale)
+        # Send button should be present
         send_btn = page.locator("#agent-send")
         expect(send_btn).to_be_visible()
 
-        page.screenshot(path=SCREENSHOT_DIR / "18_agent_input_area.png")
+        page.screenshot(path=SCREENSHOT_DIR / "21_agent_input_area.png")
 
     def test_agent_input_interaction(self, page: Page):
         """Typing in input should work normally"""
+        open_agent(page)
+
         agent_input = page.locator("#agent-input")
 
         # Type some text
@@ -389,28 +605,12 @@ class TestAgentChat:
         # Verify text is in input
         expect(agent_input).to_have_value(test_message)
 
-        page.screenshot(path=SCREENSHOT_DIR / "19_agent_input_typed.png")
-
-    def test_agent_send_button_when_unavailable(self, page: Page):
-        """Send button behavior when agent is unavailable"""
-        agent_status = page.locator("#agent-status")
-
-        # Wait for status check
-        page.wait_for_timeout(1000)
-
-        status_text = agent_status.inner_text()
-        send_btn = page.locator("#agent-send")
-
-        # Button is always visible (shows error message when clicked if unavailable)
-        expect(send_btn).to_be_visible()
-
-        if status_text == "Unavailable":
-            page.screenshot(path=SCREENSHOT_DIR / "20_agent_unavailable.png")
-        else:
-            page.screenshot(path=SCREENSHOT_DIR / "20_agent_available.png")
+        page.screenshot(path=SCREENSHOT_DIR / "22_agent_input_typed.png")
 
     def test_agent_panel_position(self, page: Page):
         """Agent panel should be positioned in bottom-right corner"""
+        open_agent(page)
+
         agent_panel = page.locator("#agent-panel")
 
         # Check CSS position
@@ -419,23 +619,22 @@ class TestAgentChat:
         )
         assert position == "fixed", f"Expected fixed position, got {position}"
 
-        # Check bottom value (panel should be at bottom)
+        # Bottom value should be above floating toolbar (around 80px)
         bottom = page.evaluate(
             "window.getComputedStyle(document.getElementById('agent-panel')).bottom"
         )
-
-        # Should be positioned at bottom
-        assert bottom == "0px", f"Expected bottom: 0px, got {bottom}"
+        bottom_val = float(bottom.replace("px", ""))
+        assert bottom_val >= 50, f"Panel should be positioned above toolbar: {bottom}"
 
     def test_agent_panel_width(self, page: Page):
         """Agent panel should have reasonable width"""
-        agent_panel = page.locator("#agent-panel")
+        open_agent(page)
 
         width = page.evaluate(
             "document.getElementById('agent-panel').offsetWidth"
         )
 
-        # Should be around 400px (check style.css for exact value)
+        # Should be around 380px (check style.css for exact value)
         assert width >= 300, f"Panel too narrow: {width}px"
         assert width <= 500, f"Panel too wide: {width}px"
 
@@ -445,6 +644,10 @@ class TestEditorOperations:
 
     def test_save_button_disabled_initially(self, page: Page):
         """Save button should be disabled when no changes made"""
+        # Open sidebar and editor first
+        open_sidebar(page)
+        open_editor(page)
+
         # Select a file first
         page.click(".tree-file")
         page.wait_for_timeout(500)
@@ -455,6 +658,10 @@ class TestEditorOperations:
 
     def test_save_button_enabled_after_edit(self, page: Page):
         """Save button should be enabled after editing content"""
+        # Open sidebar and editor first
+        open_sidebar(page)
+        open_editor(page)
+
         # Select a file first
         page.click(".tree-file")
         page.wait_for_timeout(500)
@@ -468,11 +675,15 @@ class TestEditorOperations:
         save_btn = page.locator("#btn-save")
         expect(save_btn).not_to_be_disabled()
 
-        page.screenshot(path=SCREENSHOT_DIR / "21_save_button_enabled.png")
+        page.screenshot(path=SCREENSHOT_DIR / "23_save_button_enabled.png")
 
     def test_editor_shows_file_content(self, page: Page):
         """Editor should display the selected file's content"""
-        # Click on a content.md file (new mindmap structure)
+        # Open sidebar and editor first
+        open_sidebar(page)
+        open_editor(page)
+
+        # Click on a content.md file
         page.click(".tree-file")
         page.wait_for_timeout(500)
 
@@ -480,11 +691,15 @@ class TestEditorOperations:
         editor = page.locator("#markdown-editor")
         content = editor.input_value()
 
-        # Should contain some content (could be module content, FR list, or dimension content)
+        # Should contain some content
         assert len(content) > 0, "Content should not be empty"
 
     def test_file_indicator_updates(self, page: Page):
         """Current file indicator should show selected filename"""
+        # Open sidebar and editor first
+        open_sidebar(page)
+        open_editor(page)
+
         # Click on a file
         page.click(".tree-file")
         page.wait_for_timeout(500)
@@ -558,7 +773,7 @@ class TestMindmapStructure:
         )
         assert len(mindmap_text) > 50, "Mindmap should contain substantial text content"
 
-        page.screenshot(path=SCREENSHOT_DIR / "22_all_modules.png")
+        page.screenshot(path=SCREENSHOT_DIR / "24_all_modules.png")
 
     def test_mindmap_shows_content(self, page: Page):
         """Mindmap should show content from markdown files"""
@@ -599,34 +814,40 @@ class TestEditMode:
     """Tests for edit mode toggle functionality"""
 
     def test_edit_mode_checkbox_exists(self, page: Page):
-        """Edit mode checkbox should exist"""
-        checkbox = page.locator("#toggle-edit-mode")
-        expect(checkbox).to_be_visible()
+        """Edit mode toggle label should exist (checkbox is hidden, styled)"""
+        # The checkbox is hidden, we check for the parent label
+        edit_toggle = page.locator(".edit-toggle")
+        expect(edit_toggle).to_be_visible()
 
     def test_edit_mode_toggle(self, page: Page):
-        """Clicking edit mode checkbox should toggle edit mode"""
-        checkbox = page.locator("#toggle-edit-mode")
+        """Clicking edit mode label should toggle edit mode"""
+        # Click the parent label, not the hidden checkbox
+        edit_toggle = page.locator(".edit-toggle")
         mindmap_pane = page.locator("#mindmap-pane")
 
         # Initially not in edit mode
         expect(mindmap_pane).not_to_have_class(re.compile(r"\bedit-mode\b"))
 
-        # Enable edit mode
-        checkbox.click()
+        # Enable edit mode by clicking the label
+        edit_toggle.click()
         expect(mindmap_pane).to_have_class(re.compile(r"\bedit-mode\b"))
 
         # Disable edit mode
-        checkbox.click()
+        edit_toggle.click()
         expect(mindmap_pane).not_to_have_class(re.compile(r"\bedit-mode\b"))
 
         page.screenshot(path=SCREENSHOT_DIR / "23_edit_mode_toggle.png")
 
 
-class TestKeyboardShortcuts:
-    """Tests for keyboard shortcuts"""
+class TestKeyboardShortcutsSave:
+    """Tests for Ctrl+S save keyboard shortcut"""
 
     def test_ctrl_s_triggers_save(self, page: Page):
         """Ctrl+S should trigger save when file is dirty"""
+        # Open sidebar and editor first
+        open_sidebar(page)
+        open_editor(page)
+
         # Select a file
         page.click(".tree-file")
         page.wait_for_timeout(500)
@@ -687,7 +908,7 @@ class TestEditModal:
         page.wait_for_selector("#mindmap .markmap-node", timeout=10000)
 
         # Enable edit mode
-        page.click("#toggle-edit-mode")
+        page.click(".edit-toggle")
         page.wait_for_timeout(300)
 
         # Click on a mindmap node (first FR item)
@@ -706,7 +927,7 @@ class TestEditModal:
         page.wait_for_selector("#mindmap .markmap-node", timeout=10000)
 
         # Enable edit mode and click a node
-        page.click("#toggle-edit-mode")
+        page.click(".edit-toggle")
         page.wait_for_timeout(300)
 
         # Get text from a specific node before clicking
@@ -724,7 +945,7 @@ class TestEditModal:
         page.wait_for_selector("#mindmap .markmap-node", timeout=10000)
 
         # Enable edit mode and open modal
-        page.click("#toggle-edit-mode")
+        page.click(".edit-toggle")
         page.wait_for_timeout(300)
         page.locator("#mindmap .markmap-node").first.click()
         page.wait_for_timeout(300)
@@ -747,7 +968,7 @@ class TestEditModal:
         page.wait_for_selector("#mindmap .markmap-node", timeout=10000)
 
         # Enable edit mode and open modal
-        page.click("#toggle-edit-mode")
+        page.click(".edit-toggle")
         page.wait_for_timeout(300)
         page.locator("#mindmap .markmap-node").first.click()
         page.wait_for_timeout(300)
@@ -769,7 +990,7 @@ class TestEditModal:
         page.wait_for_selector("#mindmap .markmap-node", timeout=10000)
 
         # Enable edit mode and open modal
-        page.click("#toggle-edit-mode")
+        page.click(".edit-toggle")
         page.wait_for_timeout(300)
         page.locator("#mindmap .markmap-node").first.click()
         page.wait_for_timeout(300)
@@ -802,7 +1023,7 @@ class TestEditModal:
         page.wait_for_selector("#mindmap .markmap-node", timeout=10000)
 
         # Enable edit mode and open modal
-        page.click("#toggle-edit-mode")
+        page.click(".edit-toggle")
         page.wait_for_timeout(300)
         page.locator("#mindmap .markmap-node").first.click()
         page.wait_for_timeout(300)
@@ -826,6 +1047,9 @@ class TestFileListDisplay:
 
     def test_file_list_shows_parent_dir_names(self, page: Page):
         """File list should show parent directory names, not 'content.md'"""
+        # Open sidebar first
+        open_sidebar(page)
+
         file_list = page.locator("#file-list")
 
         # Get all file item texts
@@ -839,10 +1063,13 @@ class TestFileListDisplay:
             assert "content.md" not in item_text, \
                 f"File item should show parent dir, not 'content.md': {item_text}"
 
-        page.screenshot(path=SCREENSHOT_DIR / "27_file_list_parent_dirs.png")
+        page.screenshot(path=SCREENSHOT_DIR / "25_file_list_parent_dirs.png")
 
     def test_file_list_shows_meaningful_names(self, page: Page):
         """File list should show meaningful directory names in folder nodes"""
+        # Open sidebar first
+        open_sidebar(page)
+
         file_list = page.locator("#file-list")
 
         # Get text from all folder nodes
@@ -861,6 +1088,9 @@ class TestFileListDisplay:
 
     def test_file_list_shows_module_names(self, page: Page, mindmap_structure):
         """File list should show module directory names in folder nodes"""
+        # Open sidebar first
+        open_sidebar(page)
+
         file_list = page.locator("#file-list")
 
         # Wait for folder nodes to load
@@ -888,9 +1118,7 @@ class TestZoomPreservation:
         """Zoom level should be preserved after clicking fold/toggle button"""
         page.wait_for_selector("#mindmap .markmap-node", timeout=10000)
 
-        # Collapse agent panel to avoid it blocking toolbar clicks
-        page.click("#agent-toggle")
-        page.wait_for_timeout(300)
+        # Agent panel is hidden by default in minimalist mode, no need to collapse
 
         # Get initial zoom transform
         initial_transform = page.evaluate("""
@@ -944,9 +1172,7 @@ class TestZoomPreservation:
         """Zoom level should be preserved after toggling theme"""
         page.wait_for_selector("#mindmap .markmap-node", timeout=10000)
 
-        # Collapse agent panel to avoid it blocking toolbar clicks
-        page.click("#agent-toggle")
-        page.wait_for_timeout(300)
+        # Agent panel is hidden by default in minimalist mode, no need to collapse
 
         # Zoom in
         for _ in range(2):

@@ -5,7 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title id="page-title">Mindmap Editor</title>
     <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
-    <link rel="stylesheet" href="/static/style.css?v=9">
+    <!-- Premium Typography: Geist (Vercel) + JetBrains Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css?v=12">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/markmap-toolbar@0.18.12/dist/style.css">
 </head>
 <body>
@@ -33,10 +37,48 @@
             </div>
         </header>
 
-        <!-- Main content -->
+        <!-- Main content - Minimalist Layout -->
         <div class="main">
-            <!-- File sidebar -->
-            <aside class="sidebar">
+            <!-- Floating Toggle Toolbar -->
+            <div class="floating-toolbar" id="floating-toolbar">
+                <button id="btn-toggle-sidebar" class="toolbar-toggle" title="Toggle Files (⌘1)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 3h7v18H3zM10 3h11v18H10z"/>
+                    </svg>
+                    <span>Files</span>
+                </button>
+                <button id="btn-toggle-editor" class="toolbar-toggle" title="Toggle Editor (⌘2)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 19l7-7 3 3-7 7-3-3z"/>
+                        <path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/>
+                        <path d="M2 2l7.586 7.586"/>
+                    </svg>
+                    <span>Editor</span>
+                </button>
+                <button id="btn-toggle-agent" class="toolbar-toggle" title="Toggle Agent (⌘3)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                    </svg>
+                    <span>Agent</span>
+                </button>
+                <div class="toolbar-divider"></div>
+                <button id="btn-fit" class="toolbar-toggle" title="Fit to View">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/>
+                    </svg>
+                </button>
+                <label class="toolbar-toggle edit-toggle" title="Edit Mode">
+                    <input type="checkbox" id="toggle-edit-mode">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                    </svg>
+                    <span>Edit</span>
+                </label>
+            </div>
+
+            <!-- File sidebar - Hidden by default -->
+            <aside class="sidebar collapsed" id="sidebar">
                 <div class="sidebar-header">
                     <h2>Files</h2>
                     <button id="btn-expand-all" class="expand-btn" title="Toggle expand/collapse all">
@@ -50,8 +92,8 @@
 
             <!-- Split pane: Editor + Mindmap -->
             <div class="content">
-                <!-- Markdown editor pane -->
-                <div class="pane editor-pane">
+                <!-- Markdown editor pane - Hidden by default -->
+                <div class="pane editor-pane collapsed" id="editor-pane">
                     <div class="pane-toolbar">
                         <span id="current-file" class="file-indicator">No file selected</span>
                         <div class="toolbar-actions">
@@ -68,31 +110,10 @@
                 </div>
 
                 <!-- Resize handle -->
-                <div class="resize-handle" id="resize-handle"></div>
+                <div class="resize-handle hidden" id="resize-handle"></div>
 
-                <!-- Mindmap pane -->
+                <!-- Mindmap pane - Hero element, always visible -->
                 <div class="pane mindmap-pane" id="mindmap-pane">
-                    <div class="pane-toolbar">
-                        <div class="toolbar-actions">
-                            <button id="btn-fit" class="icon-btn" title="">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/>
-                                </svg>
-                            </button>
-                            <button id="btn-fullscreen" class="icon-btn" title="">
-                                <svg class="icon-expand" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M8 3H5a2 2 0 0 0-2 2v3M21 8V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3M16 21h3a2 2 0 0 0 2-2v-3"/>
-                                </svg>
-                                <svg class="icon-collapse" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M4 14h6v6M20 10h-6V4M14 10l7-7M3 21l7-7"/>
-                                </svg>
-                            </button>
-                            <label class="edit-mode-toggle">
-                                <input type="checkbox" id="toggle-edit-mode">
-                                <span>Edit</span>
-                            </label>
-                        </div>
-                    </div>
                     <svg id="mindmap"></svg>
                 </div>
             </div>
@@ -110,8 +131,8 @@
             </div>
         </div>
 
-        <!-- Agent Chat Panel -->
-        <div id="agent-panel" class="agent-panel">
+        <!-- Agent Chat Panel - Hidden by default -->
+        <div id="agent-panel" class="agent-panel collapsed hidden-panel">
             <div class="agent-panel-header">
                 <span>🤖 Agent Chat</span>
                 <span id="agent-status" class="agent-status">Checking...</span>
