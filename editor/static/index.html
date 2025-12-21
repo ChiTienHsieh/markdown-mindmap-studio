@@ -19,6 +19,22 @@
             <h1 id="header-title">Mindmap Editor</h1>
             <div class="header-actions">
                 <span id="connection-status" class="status disconnected">● Disconnected</span>
+                <div class="lang-dropdown" id="lang-dropdown">
+                    <button class="lang-toggle" id="btn-lang-toggle" title="Language">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                            <circle cx="12" cy="12" r="10"/>
+                            <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+                        </svg>
+                        <span id="current-lang">EN</span>
+                        <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12">
+                            <polyline points="6 9 12 15 18 9"/>
+                        </svg>
+                    </button>
+                    <div class="lang-menu hidden" id="lang-menu">
+                        <button class="lang-option" data-locale="en">English</button>
+                        <button class="lang-option" data-locale="zh-TW">繁體中文</button>
+                    </div>
+                </div>
                 <button id="btn-theme-toggle" class="icon-btn" title="">
                     <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <circle cx="12" cy="12" r="5"/>

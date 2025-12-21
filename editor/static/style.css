@@ -528,6 +528,108 @@ body.light-theme .export-menu {
     transform: scale(0.98);
 }
 
+/* ===== LANGUAGE DROPDOWN ===== */
+
+.lang-dropdown {
+    position: relative;
+}
+
+.lang-toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--border-subtle);
+    border-radius: 8px;
+    color: var(--text-secondary);
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.lang-toggle:hover {
+    background: rgba(255, 255, 255, 0.12);
+    color: var(--text-primary);
+}
+
+.lang-toggle .chevron {
+    opacity: 0.6;
+    transition: transform 0.2s ease;
+}
+
+.lang-dropdown.open .lang-toggle .chevron {
+    transform: rotate(180deg);
+}
+
+body.light-theme .lang-toggle {
+    background: rgba(0, 0, 0, 0.05);
+}
+
+body.light-theme .lang-toggle:hover {
+    background: rgba(0, 0, 0, 0.08);
+}
+
+.lang-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    margin-top: 6px;
+    background: rgba(30, 30, 35, 0.98);
+    border: 1px solid var(--border-subtle);
+    border-radius: 10px;
+    padding: 4px;
+    min-width: 120px;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-8px);
+    transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s;
+}
+
+.lang-menu:not(.hidden) {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+body.light-theme .lang-menu {
+    background: rgba(255, 255, 255, 0.98);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+}
+
+.lang-option {
+    display: block;
+    width: 100%;
+    padding: 8px 12px;
+    background: none;
+    border: none;
+    border-radius: 6px;
+    color: var(--text-secondary);
+    font-size: 13px;
+    font-weight: 500;
+    text-align: left;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.lang-option:hover {
+    background: var(--accent-blue);
+    color: white;
+}
+
+.lang-option.active {
+    color: var(--accent-blue);
+}
+
+.lang-option.active:hover {
+    color: white;
+}
+
 /* ===== SIDEBAR ===== */
 
 .sidebar {

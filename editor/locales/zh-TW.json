@@ -1,12 +1,12 @@
 {
   "app": {
-    "title": "{projectTitle} - Mindmap Editor"
+    "title": "{projectTitle} - 心智圖編輯器"
   },
   "header": {
-    "title": "{projectTitle} - Mindmap Editor"
+    "title": "{projectTitle} - 心智圖編輯器"
   },
   "sidebar": {
-    "filesTitle": "Files"
+    "filesTitle": "檔案"
   },
   "editor": {
     "placeholder": "從側邊欄選擇檔案進行編輯...",
@@ -18,33 +18,44 @@
     "fit": "適合視窗大小",
     "fullscreen": "全螢幕",
     "themeToggle": "切換深色/淺色主題",
-    "edit": "Edit"
+    "edit": "編輯"
   },
   "status": {
-    "connected": "Connected",
-    "disconnected": "Disconnected"
+    "connected": "已連線",
+    "disconnected": "已斷線"
   },
   "modal": {
-    "editTitle": "Edit Node",
-    "cancel": "Cancel",
-    "save": "Save"
+    "editTitle": "編輯節點",
+    "cancel": "取消",
+    "save": "儲存"
+  },
+  "export": {
+    "title": "匯出",
+    "png": "PNG 圖片",
+    "html": "HTML 網頁",
+    "pdf": "PDF 文件"
+  },
+  "language": {
+    "title": "語言",
+    "en": "English",
+    "zh-TW": "繁體中文"
   },
   "agent": {
-    "panelTitle": "Agent Chat",
-    "statusChecking": "Checking...",
-    "statusReady": "Ready",
-    "statusUnavailable": "Unavailable",
+    "panelTitle": "AI 助手",
+    "statusChecking": "檢查中...",
+    "statusReady": "就緒",
+    "statusUnavailable": "無法使用",
     "inputPlaceholder": "輸入訊息...",
     "sendButton": "送出",
     "welcome": {
       "intro": "我可以幫你：",
       "capabilities": [
-        "瀏覽和理解 mindmap 結構",
-        "搜尋特定的 FR 或關鍵字",
+        "瀏覽和理解心智圖結構",
+        "搜尋特定的需求或關鍵字",
         "編輯 content.md 檔案",
         "回答系統架構相關問題"
       ],
-      "example": "試試看：「列出所有 pokemon_types 模組的 FR」"
+      "example": "試試看：「列出所有 pokemon_types 模組的需求」"
     }
   },
   "ai": {

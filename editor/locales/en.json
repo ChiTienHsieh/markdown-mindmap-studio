@@ -29,6 +29,17 @@
     "cancel": "Cancel",
     "save": "Save"
   },
+  "export": {
+    "title": "Export",
+    "png": "PNG Image",
+    "html": "HTML Page",
+    "pdf": "PDF Document"
+  },
+  "language": {
+    "title": "Language",
+    "en": "English",
+    "zh-TW": "繁體中文"
+  },
   "agent": {
     "panelTitle": "Agent Chat",
     "statusChecking": "Checking...",

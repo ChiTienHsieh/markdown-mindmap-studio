@@ -41,6 +41,7 @@ let appConfig = {
 
 // Locale strings (loaded from server)
 let locale = {};
+let currentLocale = 'en';
 
 // HTML escape helper to prevent XSS
 function escapeHtml(text) {
@@ -189,6 +190,11 @@ const elements = {
     exportPng: document.getElementById('export-png'),
     exportHtml: document.getElementById('export-html'),
     exportPdf: document.getElementById('export-pdf'),
+    // Language elements
+    langDropdown: document.getElementById('lang-dropdown'),
+    btnLangToggle: document.getElementById('btn-lang-toggle'),
+    langMenu: document.getElementById('lang-menu'),
+    currentLang: document.getElementById('current-lang'),
 };
 
 // Color palettes for different themes
@@ -242,8 +248,10 @@ async function loadLocale() {
         const response = await fetch(`/api/locales/${targetLocale}`);
         if (response.ok) {
             locale = await response.json();
+            currentLocale = targetLocale;
         } else {
             locale = await fetch('/api/locales/en').then(r => r.json());
+            currentLocale = 'en';
         }
 
         // Replace {projectTitle} placeholders
@@ -297,6 +305,20 @@ function applyLocale() {
     // Editor placeholder
     const editor = document.getElementById('markdown-editor');
     if (editor) editor.placeholder = locale.editor?.placeholder || '';
+
+    // Language switcher
+    const currentLangEl = document.getElementById('current-lang');
+    if (currentLangEl) {
+        currentLangEl.textContent = currentLocale === 'zh-TW' ? '中文' : 'EN';
+    }
+
+    // Update HTML lang attribute
+    document.documentElement.lang = currentLocale;
+
+    // Mark active language option
+    document.querySelectorAll('.lang-option').forEach(opt => {
+        opt.classList.toggle('active', opt.dataset.locale === currentLocale);
+    });
 }
 
 // Initialize
@@ -776,6 +798,52 @@ function setupExportDropdown() {
         if (!e.target.closest('.export-dropdown')) {
             exportMenu?.classList.add('hidden');
         }
+        if (!e.target.closest('.lang-dropdown')) {
+            elements.langMenu?.classList.add('hidden');
+            elements.langDropdown?.classList.remove('open');
+        }
+    });
+
+    // Language dropdown toggle
+    elements.btnLangToggle?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        elements.langMenu?.classList.toggle('hidden');
+        elements.langDropdown?.classList.toggle('open');
+    });
+
+    // Language option click
+    document.querySelectorAll('.lang-option').forEach(opt => {
+        opt.addEventListener('click', async () => {
+            const newLocale = opt.dataset.locale;
+            if (newLocale && newLocale !== currentLocale) {
+                localStorage.setItem('mindmap-locale', newLocale);
+                currentLocale = newLocale;
+
+                // Reload locale strings
+                const response = await fetch(`/api/locales/${newLocale}`);
+                if (response.ok) {
+                    locale = await response.json();
+
+                    // Get project title from config for placeholder replacement
+                    const config = await fetch('/api/config').then(r => r.json());
+                    const projectTitle = config.project?.title || 'Mindmap';
+                    const replaceTitle = (obj) => {
+                        for (const key in obj) {
+                            if (typeof obj[key] === 'string') {
+                                obj[key] = obj[key].replace('{projectTitle}', projectTitle);
+                            } else if (typeof obj[key] === 'object') {
+                                replaceTitle(obj[key]);
+                            }
+                        }
+                    };
+                    replaceTitle(locale);
+
+                    applyLocale();
+                }
+            }
+            elements.langMenu?.classList.add('hidden');
+            elements.langDropdown?.classList.remove('open');
+        });
     });
 
     // Export PNG
