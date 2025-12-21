@@ -8,9 +8,19 @@ name: CI
 # When to run this workflow
 on:
   push:
-    branches: [main]       # Run on pushes to main
+    branches: [main]
+    paths-ignore:          # Don't run CI for these files
+      - '**.md'            # Markdown files (README, docs)
+      - 'docs/**'          # Documentation folder
+      - '.gitignore'
+      - 'LICENSE'
   pull_request:
-    branches: [main]       # Run on PRs targeting main
+    branches: [main]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - '.gitignore'
+      - 'LICENSE'
 
 jobs:
   test:
