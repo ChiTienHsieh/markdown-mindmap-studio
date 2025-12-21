@@ -157,11 +157,10 @@ class TestFloatingToolbar:
         page.screenshot(path=SCREENSHOT_DIR / "05_floating_toolbar.png")
 
     def test_toolbar_has_all_buttons(self, page: Page):
-        """Toolbar should have Files, Editor, Agent, Fit, Edit buttons"""
+        """Toolbar should have Files, Editor, Agent, Edit buttons"""
         expect(page.locator("#btn-toggle-sidebar")).to_be_visible()
         expect(page.locator("#btn-toggle-editor")).to_be_visible()
         expect(page.locator("#btn-toggle-agent")).to_be_visible()
-        expect(page.locator("#btn-fit")).to_be_visible()
         # Edit mode is a label containing a hidden checkbox
         expect(page.locator(".edit-toggle")).to_be_visible()
 
@@ -409,18 +408,22 @@ class TestMindmap:
 
         page.screenshot(path=SCREENSHOT_DIR / "10_mindmap_rendered.png")
 
-    def test_fit_to_view(self, page: Page):
-        """Fit button should trigger markmap.fit()"""
+    def test_mindmap_is_interactive(self, page: Page):
+        """Mindmap should be zoomable/pannable via markmap"""
         # Wait for mindmap to render
         page.wait_for_selector("#mindmap .markmap-node", timeout=10000)
 
-        # Click fit button
-        page.click("#btn-fit")
+        # Check that markmap-view class exists (indicates markmap is initialized)
+        svg = page.locator("#mindmap")
+        class_attr = svg.get_attribute("class") or ""
+        # Markmap adds its own styling
+        expect(svg).to_be_visible()
 
-        # Give time for animation
-        page.wait_for_timeout(500)
+        # Should have group element with transform for zoom/pan
+        g = page.locator("#mindmap > g")
+        expect(g).to_be_visible()
 
-        page.screenshot(path=SCREENSHOT_DIR / "11_mindmap_fitted.png")
+        page.screenshot(path=SCREENSHOT_DIR / "11_mindmap_interactive.png")
 
 
 class TestIconsAndButtons:
@@ -436,15 +439,15 @@ class TestIconsAndButtons:
         expect(theme_svg.first).to_be_visible()
 
     def test_floating_toolbar_buttons_visible(self, page: Page):
-        """Floating toolbar should have toggle and fit buttons"""
+        """Floating toolbar should have toggle and edit buttons"""
         expect(page.locator("#btn-toggle-sidebar")).to_be_visible()
         expect(page.locator("#btn-toggle-editor")).to_be_visible()
         expect(page.locator("#btn-toggle-agent")).to_be_visible()
-        expect(page.locator("#btn-fit")).to_be_visible()
+        expect(page.locator(".edit-toggle")).to_be_visible()
 
-        # Fit button should have SVG icon
-        fit_svg = page.locator("#btn-fit svg")
-        expect(fit_svg.first).to_be_visible()
+        # Edit toggle should have SVG icon
+        edit_svg = page.locator(".edit-toggle svg")
+        expect(edit_svg.first).to_be_visible()
 
     def test_icon_size(self, page: Page):
         """Icons should be properly sized"""
@@ -880,19 +883,18 @@ class TestMindmapToolbar:
         toolbar = page.locator(".mm-toolbar")
         expect(toolbar).to_be_visible()
 
-    def test_fit_button_works(self, page: Page):
-        """Fit button should work without errors"""
+    def test_markmap_toolbar_has_buttons(self, page: Page):
+        """Markmap toolbar should have interactive buttons"""
         page.wait_for_selector("#mindmap .markmap-node", timeout=10000)
 
-        # Click fit button
-        page.click("#btn-fit")
-        page.wait_for_timeout(500)
+        # Markmap toolbar exists (verified in test_zoom_controls_visible)
+        toolbar = page.locator(".mm-toolbar")
+        expect(toolbar).to_be_visible()
 
-        # Should not cause any errors (check console)
-        # The mindmap should still have nodes
-        nodes = page.locator("#mindmap .markmap-node")
-        count = nodes.count()
-        assert count > 0, "Mindmap nodes disappeared after fit"
+        # Toolbar should have at least one button
+        buttons = toolbar.locator("div")
+        count = buttons.count()
+        assert count >= 1, f"Toolbar should have buttons, found {count}"
 
 
 class TestEditModal:

@@ -162,7 +162,6 @@ const elements = {
     mindmap: document.getElementById('mindmap'),
     btnSave: document.getElementById('btn-save'),
     btnRefresh: document.getElementById('btn-refresh'),
-    btnFit: document.getElementById('btn-fit'),
     toggleEditMode: document.getElementById('toggle-edit-mode'),
     connectionStatus: document.getElementById('connection-status'),
     editModal: document.getElementById('edit-modal'),
@@ -272,8 +271,6 @@ function applyLocale() {
     if (btnRefresh) btnRefresh.title = locale.buttons?.refresh || '';
     const btnSave = document.getElementById('btn-save');
     if (btnSave) btnSave.title = locale.buttons?.save || '';
-    const btnFit = document.getElementById('btn-fit');
-    if (btnFit) btnFit.title = locale.buttons?.fit || '';
     const btnFullscreen = document.getElementById('btn-fullscreen');
     if (btnFullscreen) btnFullscreen.title = locale.buttons?.fullscreen || '';
 
@@ -718,11 +715,6 @@ function setupEventListeners() {
         await loadAllMarkdown();
     });
 
-    // Fit button - use original fit to actually fit to viewport
-    elements.btnFit.addEventListener('click', () => {
-        state.markmap?._originalFit?.() || state.markmap?.fit();
-    });
-
     // Edit mode toggle
     elements.toggleEditMode.addEventListener('change', (e) => {
         state.editMode = e.target.checked;
@@ -786,11 +778,14 @@ function handleNodeClick(e) {
     const node = e.target.closest('.markmap-node');
     if (!node) return;
 
-    // Get the text content
+    // Get the text content, preserving line breaks
     const textEl = node.querySelector('foreignObject div, text');
     if (!textEl) return;
 
-    const text = textEl.textContent || textEl.innerText;
+    // Convert <br> tags to newlines before extracting text
+    const clonedEl = textEl.cloneNode(true);
+    clonedEl.querySelectorAll('br').forEach(br => br.replaceWith('\n'));
+    const text = clonedEl.textContent || clonedEl.innerText;
     if (!text) return;
 
     // Open edit modal
