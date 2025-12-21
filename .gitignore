@@ -21,6 +21,7 @@ __pycache__/
 # Project
 exports/
 *.log
+ai_chatroom/
 
 # Secrets
 *secret*
