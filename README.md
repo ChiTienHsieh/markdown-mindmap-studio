@@ -5,7 +5,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/ChiTienHsieh/markdown-mindmap-studio/pulls)
 
-> Interactive mindmap editor using Markdown files as single source of truth
+> Interactive mindmap editor using Markdown files as single source of truth ヽ(・∀・)ノ
 
 English | [繁體中文](README-zh.tw.md)
 
@@ -16,7 +16,7 @@ English | [繁體中文](README-zh.tw.md)
 - **Markdown-based**: All content stored as plain Markdown files - version control friendly
 - **Interactive Mindmap**: Beautiful visual tree view powered by Markmap.js
 - **Bidirectional Editing**: Edit markdown directly or click nodes to update
-- **Real-time Sync**: WebSocket-based live updates across all views
+- **Real-time Sync**: WebSocket-based live updates across all views (๑•̀ㅂ•́)و✧
 - **Dark/Light Theme**: Toggle between themes with persistence
 - **Export Options**: PNG image, standalone HTML, and PDF document
 - **AI Assistant**: Optional Claude Agent integration for smart editing (requires API key)
@@ -104,7 +104,7 @@ uv run python editor/server.py
 
 ## Contributing
 
-PRs are welcome! Please open an issue first to discuss what you'd like to change.
+PRs are welcome! Please open an issue first to discuss what you'd like to change (ﾉ´ヮ`)ﾉ*: ・ﾟ✧
 
 ## License
 

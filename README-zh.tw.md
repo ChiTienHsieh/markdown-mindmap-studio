@@ -5,18 +5,18 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/ChiTienHsieh/markdown-mindmap-studio/pulls)
 
-> 以 Markdown 檔案作為單一資料來源的互動式心智圖編輯器
+> 以 Markdown 檔案作為單一資料來源的互動式心智圖編輯器 ヽ(・∀・)ノ
 
 [English](README.md) | 繁體中文
 
-![Demo](docs/images/demo.gif)
+![Demo](docs/images/demo-zh-tw.gif)
 
 ## 特色功能
 
 - **Markdown 為本**: 所有內容以純文字 Markdown 檔案儲存，版本控制友善
 - **互動式心智圖**: 使用 Markmap.js 呈現美觀的視覺化樹狀圖
 - **雙向編輯**: 編輯 Markdown 或點擊節點皆可更新內容
-- **即時同步**: 基於 WebSocket 的即時更新
+- **即時同步**: 基於 WebSocket 的即時更新 (๑•̀ㅂ•́)و✧
 - **深色/淺色主題**: 可切換主題並保存偏好設定
 - **匯出功能**: PNG 圖片、獨立 HTML 網頁及 PDF 文件
 - **AI 助手**: 可選的 Claude Agent 整合，輔助智慧編輯（需要 API 金鑰）
@@ -104,7 +104,7 @@ uv run python editor/server.py
 
 ## 貢獻
 
-歡迎 PR！請先開 issue 討論你想修改的內容。
+歡迎 PR！請先開 issue 討論你想修改的內容 (ﾉ´ヮ`)ﾉ*: ・ﾟ✧
 
 ## 授權條款
 
