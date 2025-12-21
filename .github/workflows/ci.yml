@@ -1,0 +1,54 @@
+# GitHub Actions CI Workflow
+# Runs tests automatically on every push and pull request
+#
+# Learn more: https://docs.github.com/en/actions
+
+name: CI
+
+# When to run this workflow
+on:
+  push:
+    branches: [main]       # Run on pushes to main
+  pull_request:
+    branches: [main]       # Run on PRs targeting main
+
+jobs:
+  test:
+    # Which OS to run on (ubuntu is fastest and free)
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Check out the code
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Step 2: Install uv (our package manager)
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: "latest"
+
+      # Step 3: Set up Python
+      - name: Set up Python
+        run: uv python install 3.12
+
+      # Step 4: Install dependencies
+      - name: Install dependencies
+        run: uv sync --all-extras --dev
+
+      # Step 5: Run API tests
+      - name: Run API tests
+        run: uv run pytest editor/tests/test_api.py -v
+
+      # Step 6: Install Playwright browsers for E2E tests
+      - name: Install Playwright browsers
+        run: uv run playwright install chromium --with-deps
+
+      # Step 7: Run E2E tests (headless)
+      - name: Run E2E tests
+        run: |
+          # Start server in background
+          uv run python editor/server.py &
+          sleep 3
+          # Run tests
+          uv run pytest editor/tests/test_ui.py -v --tb=short
