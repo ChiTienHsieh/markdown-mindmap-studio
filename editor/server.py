@@ -22,6 +22,11 @@ import logging
 import os
 import re
 from pathlib import Path
+
+from dotenv import load_dotenv
+
+# Load .env from project root
+load_dotenv(Path(__file__).parent.parent / ".env")
 from typing import Optional
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, Request
@@ -46,8 +51,18 @@ from pydantic import BaseModel
 
 # Claude Agent SDK imports (optional - graceful fallback if not configured)
 try:
-    from claude_agent_sdk import ClaudeSDKClient, ClaudeAgentOptions
-    AGENT_SDK_AVAILABLE = bool(os.environ.get("ANTHROPIC_API_KEY"))
+    from claude_agent_sdk import (
+        ClaudeSDKClient,
+        ClaudeAgentOptions,
+        AssistantMessage,
+        ResultMessage,
+        SystemMessage,
+        TextBlock,
+        ThinkingBlock,
+        ToolUseBlock,
+    )
+    # Support both Anthropic API (ANTHROPIC_API_KEY) and OpenRouter (ANTHROPIC_AUTH_TOKEN)
+    AGENT_SDK_AVAILABLE = bool(os.environ.get("ANTHROPIC_API_KEY") or os.environ.get("ANTHROPIC_AUTH_TOKEN"))
 except ImportError:
     AGENT_SDK_AVAILABLE = False
 
@@ -384,23 +399,29 @@ async def agent_chat(request: Request, chat_request: AgentChatRequest):
             )
 
             async with ClaudeSDKClient(options=options) as client:
+                logger.info(f"Agent query: {chat_request.message}")
                 await client.query(chat_request.message)
 
                 async for message in client.receive_response():
-                    # Handle different message types from the SDK
-                    if hasattr(message, 'type'):
-                        if message.type == 'assistant':
-                            # Extract text content
-                            for block in getattr(message, 'content', []):
-                                if hasattr(block, 'text'):
-                                    yield f"data: {json.dumps({'type': 'text', 'content': block.text})}\n\n"
-                                elif hasattr(block, 'type') and block.type == 'tool_use':
-                                    yield f"data: {json.dumps({'type': 'tool_use', 'tool': block.name})}\n\n"
-                        elif message.type == 'result':
-                            yield f"data: {json.dumps({'type': 'result', 'content': str(getattr(message, 'result', ''))})}\n\n"
-                    else:
-                        # Fallback for unknown message format
-                        yield f"data: {json.dumps({'type': 'message', 'content': str(message)})}\n\n"
+                    # Handle different message types from the SDK using isinstance
+                    if isinstance(message, AssistantMessage):
+                        # Extract text content from assistant messages
+                        for block in message.content:
+                            if isinstance(block, TextBlock):
+                                logger.info(f"TextBlock: {block.text[:100]}...")
+                                yield f"data: {json.dumps({'type': 'text', 'content': block.text})}\n\n"
+                            elif isinstance(block, ToolUseBlock):
+                                logger.info(f"ToolUseBlock: {block.name}")
+                                yield f"data: {json.dumps({'type': 'tool_use', 'tool': block.name})}\n\n"
+                            elif isinstance(block, ThinkingBlock):
+                                # Skip thinking blocks (internal reasoning)
+                                logger.debug(f"ThinkingBlock: {block.thinking[:50]}...")
+                    elif isinstance(message, ResultMessage):
+                        logger.info(f"ResultMessage: success={not message.is_error}")
+                        # Final result - could send summary if needed
+                    elif isinstance(message, SystemMessage):
+                        # Skip system init messages
+                        logger.debug(f"SystemMessage: {message.subtype}")
 
             yield f"data: {json.dumps({'done': True})}\n\n"
 
