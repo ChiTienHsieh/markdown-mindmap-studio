@@ -76,27 +76,66 @@ async def client(temp_docs_dir, monkeypatch):
 
 @pytest.fixture
 def mock_agent_sdk():
-    """Mock Claude Agent SDK for agent endpoints"""
-    with patch("server.ClaudeSDKClient") as mock:
+    """Mock Claude Agent SDK for agent endpoints using actual SDK message types"""
+    # Import actual SDK classes for proper isinstance() checks
+    try:
+        from claude_agent_sdk import (
+            AssistantMessage,
+            ResultMessage,
+            SystemMessage,
+            TextBlock,
+            ThinkingBlock,
+            ToolUseBlock,
+        )
+        SDK_AVAILABLE = True
+    except ImportError:
+        SDK_AVAILABLE = False
+
+    with patch("server.ClaudeSDKClient") as mock_client_class:
         # Setup async context manager
         mock_client = AsyncMock()
         mock_client.__aenter__.return_value = mock_client
         mock_client.__aexit__.return_value = None
 
-        # Mock query and response
+        # Mock query
         mock_client.query = AsyncMock()
 
-        async def mock_receive():
-            # Yield a few messages
-            mock_msg1 = MagicMock()
-            mock_msg1.type = "assistant"
-            mock_block = MagicMock()
-            mock_block.text = "Agent 回覆內容"
-            mock_msg1.content = [mock_block]
-            yield mock_msg1
+        if SDK_AVAILABLE:
+            # Use actual SDK classes for proper isinstance() checks
+            async def mock_receive():
+                # Create real TextBlock and AssistantMessage instances
+                text_block = TextBlock(text="Agent 回覆內容：這是測試回應")
+                assistant_msg = AssistantMessage(
+                    content=[text_block],
+                    model="test-model",
+                    parent_tool_use_id=None,
+                    error=None
+                )
+                yield assistant_msg
+
+                # Create real ResultMessage instance
+                result_msg = ResultMessage(
+                    subtype="success",
+                    duration_ms=100,
+                    duration_api_ms=200,
+                    is_error=False,
+                    num_turns=1,
+                    session_id="test-session",
+                    total_cost_usd=0.0,
+                    usage={},
+                    result="測試完成",
+                    structured_output=None
+                )
+                yield result_msg
+        else:
+            # Fallback mock when SDK not available
+            async def mock_receive():
+                mock_msg = MagicMock()
+                mock_msg.content = [MagicMock(text="Agent 回覆內容")]
+                yield mock_msg
 
         mock_client.receive_response = mock_receive
-        mock.return_value = mock_client
+        mock_client_class.return_value = mock_client
 
         yield mock_client
 
